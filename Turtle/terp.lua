@@ -77,7 +77,7 @@ function terp.create()
         return result
     end
 
-    self.after_back = { location.moveBackward }
+    self.after_back = { location.moveBack }
 
     for direction in { "Up", "Down", "Forward" } do
         self["before_"..direction.lower] = { self["dig"..direction] }
