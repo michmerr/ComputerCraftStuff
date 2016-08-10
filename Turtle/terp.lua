@@ -9,7 +9,7 @@ end
 
 terp = {}
 
-function Terp.create()
+function terp.create()
     local self = {}
 
     -- This can be used to add extensions to this instance.
