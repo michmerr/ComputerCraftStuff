@@ -8,7 +8,7 @@ end
 
 terpRefuel = {}
 
-function terpRefuel.create(refuelFromInventory, minFuelForOperation, optimumTopOff, minFuelAfterReturn, fuelPoint)
+function terpRefuel.create(useInventory, minFuelForOperation, optimumTopOff, minFuelAfterReturn, fuelPoint)
 
     local waitForFuelLevel = minFuelForOperation or 500
     local takeFuelUntilLevel = optimumTopOff
@@ -50,7 +50,7 @@ function terpRefuel.create(refuelFromInventory, minFuelForOperation, optimumTopO
         end
     end
 
-    function self.waitForRefueling(terpInstance, returnToWaypoint)
+    function self.waitForRefueling(terpInstance)
         -- operational minimum, plus fuel to get there and back
         local minFuel = waitForFuelLevel
         if returnToWaypoint then
@@ -108,7 +108,7 @@ function terpRefuel.create(refuelFromInventory, minFuelForOperation, optimumTopO
         if not bingo or bingo > 0 then
             return true
         end
-        if refuelFromInventory then
+        if useInventory then
             if takeFuelUntilLevel > terpInstance.getFuelLimit() then
                 takeFuelUntilLevel = terpInstance.getFuelLimit()
             end
@@ -118,10 +118,32 @@ function terpRefuel.create(refuelFromInventory, minFuelForOperation, optimumTopO
             end
         end
         refueling = true
-        terpInstance.setWaypoint("resumeWork")
-        terpInstance.moveTo(fuelPointLocation)
-        self.waitForRefueling("resumeWork")
-        terpInstance.moveTo("resumeWork")
+        local returnTo
+        if terpInstance.followWaypointsTo then
+            returnTo = terpInstance.setWaypoint("resumeWork")
+            if not terpInstance.followWaypointsTo(fuelPointLocation) then
+                return false
+            end
+        else
+            returnTo = terpInstance.getLocation()
+            if not terpInstance.moveTo(fuelPointLocation) then
+                return false
+            end
+        end
+        if not self.waitForRefueling(terpInstance) then
+            return false
+        end
+        if terpInstance.followWaypointsTo then
+            if not terpInstance.followWaypointTo(returnTo) then
+                return false
+            end
+            terpInstance.removeWaypoint(returnTo)
+        else
+            if not terpInstance.moveTo(returnTo.x, returnTo.y, returnTo.z) then
+                return false
+            end
+        end
+
         refueling = false
 
         return true

@@ -131,7 +131,7 @@ function orientation.create(initialorientation)
 
     local function translate(translation)
         local result = multiply(attitude, translation)
-        return { result[1][1]; result[2][1]; result[3][1] }
+        return result[1][1], result[2][1], result[3][1]
     end
 
     function self.translateForward()

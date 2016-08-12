@@ -28,7 +28,7 @@
     <Compile Include="buffer.lua" />
     <Compile Include="fs.lua" />
     <Compile Include="http.lua" />
-    <Compile Include="Inventory.lua" />
+    <Compile Include="inventory.lua" />
     <Compile Include="location.lua" />
     <Compile Include="orientation.lua" />
     <Compile Include="orientationTest.lua" />
@@ -41,6 +41,7 @@
     <Compile Include="terpCommands.lua" />
     <Compile Include="turtle.lua" />
     <Compile Include="terpRefuel.lua" />
+    <Compile Include="waypoints.lua" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
 </Project>

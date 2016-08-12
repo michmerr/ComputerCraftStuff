@@ -2,6 +2,7 @@
 --Date
 
 require("orientation")
+require("waypoints")
 
 location = {}
 
@@ -11,7 +12,6 @@ function location.create()
     local x = 0
     local y = 0
     local z = 0
-    local waypoints = { }
 
     local function move(dx, dy, dz)
         x = x + dx
@@ -47,40 +47,9 @@ function location.create()
         return { ["x"] = x; ["y"] = y; ["z"] = z; }
     end
 
-    function self.setWaypoint(label, xCoord, yCoord, zCoord)
-        if xCoord and yCoord and zCoord then
-            waypoints[label] = { ["x"] = xCoord; ["y"] = yCoord; ["z"] = zCoord; }
-        else
-            waypoints[label] = self.getlocation()
-        end
-    end
-
-    function self.removeWaypoint(label)
-        if waypoints[label] then
-            waypoints[label] = nil
-            return true
-        end
-        return false
-    end
-
-    -- Distance to coords or waypoint in right-angle moves
-    function self.howFar(...)
-        local args = { ... }
-        local x1, y1, z1 = 0, 0, 0
-        if #args == 3 then
-            x1, y1, z1 = args[1], args[2], args[3]
-        elseif #args == 1 then
-            waypoint = waypoints[args[1]]
-            x1, y1, z1 = waypoint.x, waypoint.y, waypoint.z
-        else
-            error("howFar takes one waypoint name argument or separate x, y, z arguments")
-        end
-
-        return (x - x1) + (y - y1) + (z - y2)
-    end
-
-    function self.moveTo(destination)
-
+    -- Distance to coords in right-angle moves
+    function self.howFar(x1, y1, z1)
+        return math.abs(x - x1) + math.abs(y - y1) + math.abs(z - y2)
     end
 
     return self
@@ -102,8 +71,74 @@ function location.decorate(targetTerp)
 
     result.getlocation = _location.getlocation
     result.howFar = _location.howFar
-    result.setWaypoint = _location.setWaypoint
-    result.removeWaypoint = _location.removeWaypoint
+
+    function turnTo(x, z)
+        if math.abs(x) == math.abs(y) then
+            error("90 degree directions only. One value must be 0, and the other must be positive or negative to indicate the facing along that axis.")
+        end
+
+        local facing = _location.translateForward()
+
+        if (z < 0) then
+            if facing[1] > 0 then
+                targetTerp.turnRight()
+            elseif facing[1] < 0 then
+                targetTerp.turnLeft()
+            elseif facing[3] > 0 then
+                targetTerp.turnRight()
+                targetTerp.turnRight()
+            end
+        elseif (z > 0) then
+            if facing[1] == 1 then
+                targetTerp.turnLeft()
+            elseif facing[1] == -1 then
+                targetTerp.turnRight()
+            elseif facing[3] < 0 then
+                targetTerp.turnRight()
+                targetTerp.turnRight()
+            end
+        elseif (x > 0) then
+            if facing[3] > 0 then
+                targetTerp.turnRight()
+            elseif facing[3] < 0 then
+                targetTerp.turnLeft()
+            elseif facing[1] > 0 then
+                targetTerp.turnRight()
+                targetTerp.turnRight()
+            end
+        elseif (x < 0) then
+            if facing[3] == 1 then
+                targetTerp.turnLeft()
+            elseif facing[3] == -1 then
+                targetTerp.turnRight()
+            elseif facing[1] < 0 then
+                targetTerp.turnRight()
+                targetTerp.turnRight()
+            end
+        end
+    end
+
+    function result.moveTo(x, y, z)
+        local start = _location.getlocation()
+
+        dX = x - start.x
+        dY = y - start.y
+        dZ = z - start.z
+
+        if dZ ~= 0 then
+            turnTo(0, dZ)
+            terpTarget.forward(math.abs(dZ))
+        end
+        if dX ~= 0 then
+            turnTo(dX, 0)
+            terpTarget.forward(math.abs(dX))
+        end
+        if dY > 0 then
+            terpTarget.up(dY)
+        elseif dY < 0 then
+            terpTarget.down(math.abs(dY))
+        end
+    end
 
     targetTerp.extend(result)
 end

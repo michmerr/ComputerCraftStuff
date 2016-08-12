@@ -6,12 +6,9 @@ if not turtle then
     require("turtle")
 end
 
-TurtleRefuel = {}
+inventory = {}
 
 function inventory.create(keepFuel)
-
-
-
     local self = { }
 
     -- copy of os.sleep, but with check for the event we're expecting
