@@ -1,13 +1,17 @@
 --region *.lua
 --Date
 
-require("location")
+if not location then
+    require("location")
+end
 
 if not turtle then
     require("turtle")
 end
 
-terp = {}
+if not terp then
+    terp = {}
+end
 
 function terp.create()
     local self = {}
@@ -77,14 +81,8 @@ function terp.create()
         return result
     end
 
-    self.after_back = { location.moveBack }
-
     for direction in { "Up", "Down", "Forward" } do
         self["before_"..direction.lower] = { self["dig"..direction] }
-    end
-
-    for direction in { "Right", "Left" } do
-        self["after_turn"..direction] = { location["turn"..direction] }
     end
 
     local function _if_call(func)

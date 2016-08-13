@@ -1,19 +1,21 @@
 --region *.lua
 --Date
 
-require("orientation")
-require("waypoints")
+if not orientation then
+    require("orientation")
+end
 
 location = {}
 
 function location.create()
-    local self = Orientation.create()
+    local self = orientation.create()
 
     local x = 0
     local y = 0
     local z = 0
 
-    local function move(dx, dy, dz)
+    local function move(vector)
+        local dx, dy, dz = table.unpack(vector)
         x = x + dx
         y = y + dy
         z = z + dz
@@ -43,7 +45,7 @@ function location.create()
         move(self.translateRight())
     end
 
-    function self.getlocation()
+    function self.getLocation()
         return { ["x"] = x; ["y"] = y; ["z"] = z; }
     end
 
@@ -61,7 +63,7 @@ function location.decorate(targetTerp)
 
     local result = {}
 
-    for direction in { "Up", "Down", "Forward" } do
+    for direction in { "Up", "Down", "Forward", "Back" } do
         result["after_"..direction.lower] = _location["move"..direction]
     end
 

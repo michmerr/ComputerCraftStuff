@@ -135,27 +135,27 @@ function orientation.create(initialorientation)
     end
 
     function self.translateForward()
-        return translate(translations.forward);
+        return translate(translations.forward)
     end
 
     function self.translateBackward()
-        return translate(translations.back);
+        return translate(translations.back)
     end
 
     function self.translateUp()
-        return translate(translations.up);
+        return translate(translations.up)
     end
 
     function self.translateDown()
-        return translate(translations.down);
+        return translate(translations.down)
     end
 
     function self.translateLeft()
-        return translate(translations.left);
+        return translate(translations.left)
     end
 
     function self.translateRight()
-        return translate(translations.right);
+        return translate(translations.right)
     end
 
     return self;

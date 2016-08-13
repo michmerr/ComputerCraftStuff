@@ -29,7 +29,10 @@
     <Compile Include="fs.lua" />
     <Compile Include="http.lua" />
     <Compile Include="inventory.lua" />
+    <Compile Include="inventoryTest.lua" />
     <Compile Include="location.lua" />
+    <Compile Include="locationTest.lua" />
+    <Compile Include="mockTerp.lua" />
     <Compile Include="orientation.lua" />
     <Compile Include="orientationTest.lua" />
     <Compile Include="os.lua" />
@@ -39,9 +42,13 @@
     <Compile Include="term.lua" />
     <Compile Include="terp.lua" />
     <Compile Include="terpCommands.lua" />
+    <Compile Include="terpCommandsTest.lua" />
+    <Compile Include="terpRefuelTest.lua" />
+    <Compile Include="terpTest.lua" />
     <Compile Include="turtle.lua" />
     <Compile Include="terpRefuel.lua" />
     <Compile Include="waypoints.lua" />
+    <Compile Include="waypointsTest.lua" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
 </Project>
