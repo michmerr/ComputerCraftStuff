@@ -4,9 +4,9 @@ require("matrix")
 
 orientation = {}
 
-function orientation.create(initialorientation)
+function orientation.create(state)
 
-    local attitude = matrix.new(initialorientation or {
+    local attitude = matrix.new(state or {
             { 1; 0; 0 };
             { 0; 1; 0 };
             { 0; 0; 1 }

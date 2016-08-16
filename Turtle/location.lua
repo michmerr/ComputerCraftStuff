@@ -7,12 +7,12 @@ end
 
 location = {}
 
-function location.create()
-    local self = orientation.create()
+function location.create(state)
+    local self = orientation.create(state and state.attitude)
 
-    local x = 0
-    local y = 0
-    local z = 0
+    local x = state and state.x or 0
+    local y = state and state.y or 0
+    local z = state and state.z or 0
 
     local function move(dx, dy, dz)
         x = x + dx
@@ -50,7 +50,7 @@ function location.create()
 
     -- Distance to coords in right-angle moves
     function self.howFar(x1, y1, z1)
-        return math.abs(x - x1) + math.abs(y - y1) + math.abs(z - y2)
+        return math.abs(x - x1) + math.abs(y - y1) + math.abs(z - z1)
     end
 
     return self

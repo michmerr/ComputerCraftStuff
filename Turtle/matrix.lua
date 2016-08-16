@@ -61,8 +61,26 @@ function matrix:tostring()
     return result
 end
 
-mt.__mul = matrix.multiply
+function matrix:equals(m)
+    if not m or type(m) ~= "table" or #m ~= #self then
+        return false
+    end
 
+    for i = 1, #self do
+        if not m[i] or type(m[i]) ~= "table" or #m[i] ~= #self[i] then
+            return false
+        end
+        for j = 1, #self[i] do
+            if m[i][j] ~= self[i][j] then
+                return false
+            end
+        end
+    end
+    return true
+end
+
+mt.__eq = matrix.equals
+mt.__mul = matrix.multiply
 mt.__tostring = matrix.tostring
 
 
