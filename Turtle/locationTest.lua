@@ -80,6 +80,7 @@ function testCreate()
     if not target.expected.orientationCreateCalled then
         return false, "orientation.create() not called"
     end
+    return true
 end
 
 function testHelper(func, expected)

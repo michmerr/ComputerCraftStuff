@@ -14,8 +14,7 @@ function location.create()
     local y = 0
     local z = 0
 
-    local function move(vector)
-        local dx, dy, dz = table.unpack(vector)
+    local function move(dx, dy, dz)
         x = x + dx
         y = y + dy
         z = z + dz

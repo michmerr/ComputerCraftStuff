@@ -40,13 +40,21 @@ local function compare(matrixA, matrixB)
 end
 
 local function testHelper(func, expected)
-    local actual = func()
+    local actual = { func() }
     if not compare(expected, actual) then
         print("Results do not match.")
         print("Expected: ")
-        print(Orientation.printMatrix(expected))
+        local line = ""
+        for i = 1, #expected do
+            line = line.."  "..expected[i]
+        end
+        print(line)
         print("Actual: ")
-        print(Orientation.printMatrix(actual))
+        line = ""
+        for i = 1, #actual do
+            line = line.."  "..actual[i]
+        end
+        print(line)
         return false;
     end
     return true;
@@ -77,7 +85,7 @@ local function testDown(target, expected)
 end
 
 local function testNeutral()
-    local target = Orientation.create()
+    local target = orientation.create()
     print("testForward ["..((testForward(target, { 0, 0, 1 } ) and "passed]") or "FAILED]"))
     print("testBackwards ["..((testBackwards(target, { 0, 0, -1 } ) and "passed]") or "FAILED]"))
     print("testLeft ["..((testLeft(target, { -1, 0, 0 } ) and "passed]") or "FAILED]"))
@@ -87,7 +95,7 @@ local function testNeutral()
 end
 
 local function testFacingRight()
-    local target = Orientation.create()
+    local target = orientation.create()
     target.yawRight()
     print("testForwardFacingRight ["..((testForward(target, { 1, 0, 0 } ) and "passed]") or "FAILED]"))
     print("testBackwardsFacingRight ["..((testBackwards(target, { -1, 0, 0 } ) and "passed]") or "FAILED]"))
@@ -98,7 +106,7 @@ local function testFacingRight()
 end
 
 local function testFacingLeft()
-    local target = Orientation.create()
+    local target = orientation.create()
     target.yawLeft()
     print("testForwardFacingLeft ["..((testForward(target, { -1, 0, 0 } ) and "passed]") or "FAILED]"))
     print("testBackwardsFacingLeft ["..((testBackwards(target, { 1, 0, 0 } ) and "passed]") or "FAILED]"))
@@ -109,7 +117,7 @@ local function testFacingLeft()
 end
 
 local function testFacingBack()
-    local target = Orientation.create()
+    local target = orientation.create()
     target.yawLeft()
     target.yawLeft()
     print("testForwardFacingBack ["..((testForward(target, { 0, 0, -1 } ) and "passed]") or "FAILED]"))
@@ -121,7 +129,7 @@ local function testFacingBack()
 end
 
 local function testFacingUp()
-    local target = Orientation.create()
+    local target = orientation.create()
     target.pitchUp()
     print("testForwardFacingUp ["..((testForward(target, { 0, 1, 0 } ) and "passed]") or "FAILED]"))
     print("testBackwardsFacingUp ["..((testBackwards(target, { 0, -1, 0 } ) and "passed]") or "FAILED]"))
@@ -132,7 +140,7 @@ local function testFacingUp()
 end
 
 local function testFacingDown()
-    local target = Orientation.create()
+    local target = orientation.create()
     target.pitchDown()
     print("testForwardFacingDown ["..((testForward(target, { 0, -1, 0 } ) and "passed]") or "FAILED]"))
     print("testBackwardsFacingDown ["..((testBackwards(target, { 0, 1, 0 } ) and "passed]") or "FAILED]"))
@@ -144,7 +152,7 @@ end
 
 
 local function testRolledRight()
-    local target = Orientation.create()
+    local target = orientation.create()
     target.rollRight()
     print("testForwardRolledRight ["..((testForward(target, { 0, 0, 1 } ) and "passed]") or "FAILED]"))
     print("testBackwardsRolledRight ["..((testBackwards(target, { 0, 0, -1 } ) and "passed]") or "FAILED]"))
@@ -156,7 +164,7 @@ end
 
 
 local function testRolledLeft()
-    local target = Orientation.create()
+    local target = orientation.create()
     target.rollLeft()
     print("testForwardRolledLeft ["..((testForward(target, { 0, 0, 1 } ) and "passed]") or "FAILED]"))
     print("testBackwardsRolledLeft ["..((testBackwards(target, { 0, 0, -1 } ) and "passed]") or "FAILED]"))
@@ -168,7 +176,7 @@ end
 
 
 local function testFacingUpThenRight()
-    local target = Orientation.create()
+    local target = orientation.create()
     target.pitchUp()
     target.yawRight()
     print("testForwardFacingUpThenRight ["..((testForward(target, { 1, 0, 0 } ) and "passed]") or "FAILED]"))

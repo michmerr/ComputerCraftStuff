@@ -1,6 +1,6 @@
 --region *.lua
 
-require("location")
+require("utilities")
 require("terp")
 if not turtle then
     require("turtle")
@@ -11,25 +11,6 @@ inventory = {}
 function inventory.create(keepFuel)
     local self = { }
 
-    -- copy of os.sleep, but with check for the event we're expecting
-    -- returns success, eventParam1, eventParamN, ...
-    function waitForEvent(filter, timeout)
-        local timer, event, param, notification
-        if (timeout and timeout > 0) then
-            timer = os.startTimer( timeout )
-        end
-
-        repeat
-            notification = { os.pullEvent() }
-            event, param = table.unpack(notification)
-        until param == timer or event == filter or not filter
-
-        if (param ~= timer) then
-            return table.unpack(notification)
-        end
-
-        return false
-    end
 
 end
 
@@ -43,7 +24,7 @@ function inventory.decorate(terpInstance, minFuelForOperation, optimumTopOff, mi
         return _refuel.triggerRefuel(terpInstance)
     end
 
-    function extension.checkBingo(safetyMargin, waypoint)
+    function extension.checkFull()
         return _refuel.checkBingo(terpInstance, safetyMargin, waypoint)
     end
 

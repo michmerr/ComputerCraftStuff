@@ -2,6 +2,7 @@
 
 require("location")
 require("terp")
+require("utilities")
 if not turtle then
     require("turtle")
 end
@@ -17,26 +18,6 @@ function terpRefuel.create(useInventory, minFuelForOperation, optimumTopOff, min
     local fuelSafetyMargin = minFuelAfterReturn or 0
 
     local self = { }
-
-    -- copy of os.sleep, but with check for the event we're expecting
-    -- returns success, eventParam1, eventParamN, ...
-    function waitForEvent(filter, timeout)
-        local timer, event, param, notification
-        if (timeout and timeout > 0) then
-            timer = os.startTimer( timeout )
-        end
-
-        repeat
-            notification = { os.pullEvent() }
-            event, param = table.unpack(notification)
-        until param == timer or event == filter or not filter
-
-        if (param ~= timer) then
-            return table.unpack(notification)
-        end
-
-        return false
-    end
 
     function self.refuelFromInventory(terpInstance, takeUntil)
         local takeAmount = takeUntil - terpInstance.getFuelLevel()
@@ -71,7 +52,7 @@ function terpRefuel.create(useInventory, minFuelForOperation, optimumTopOff, min
         while terpInstance.getFuelLevel() < takeFuelUntilLevel do
             fuelLevel = terpInstance.getFuelLevel()
             -- wait for manual refuel
-            if (waitForEvent("turtle_inventory", 5)) then
+            if (utilities.waitForEvent("turtle_inventory", 5)) then
                 refuelFromInventory(terpInstance, takeFuelUntilLevel)
             end
             os.sleep(3)

@@ -25,7 +25,7 @@ function waypoint.create(label, x, y, z)
          ["z"] = z;
          }
 
-    self equals(...)
+    function self.equals(...)
         local args = { ... }
         if #args == 1 and type(args[1] == "table") then
             return waypoint.equal(self, args[1])
@@ -150,7 +150,7 @@ function waypoints.decorate(terpInstance)
     function self.followWaypointsTo(to)
         local route = _waypoints.findRoute(to)
         for i = 1, #route do
-            if not terpInstance.moveTo(route[i].x, route[i].y, route[i].z)
+            if not terpInstance.moveTo(route[i].x, route[i].y, route[i].z) then
                 return false
             end
             _waypoints.add(route[i])
