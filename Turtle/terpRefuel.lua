@@ -139,7 +139,7 @@ function terpRefuel.decorate(terpInstance, minFuelForOperation, optimumTopOff, m
 
     local extension = { }
 
-    function triggerRefuel()
+    function extension.triggerRefuel()
         return _refuel.triggerRefuel(terpInstance)
     end
 

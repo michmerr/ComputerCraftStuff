@@ -1,10 +1,6 @@
 --region *.lua
 --Date
 
-if not location then
-    require("location")
-end
-
 if not turtle then
     require("turtle")
 end
@@ -46,16 +42,49 @@ function terp.create()
     -- Extend turtle
     self.extend(turtle)
 
-    function self.dig()
-        while self.detect() do
-            turtle.dig()
+    local function digUntil(digFunc, detectFunc)
+        if not detectFunc() then
+            return false
         end
+
+        local result = digFunc()
+        while detectFunc() do
+            os.sleep(0.5)
+            result = digFunc()
+        end
+        return result
+
+    end
+
+    function self.dig()
+        return digUntil(turtle.dig, self.detect)
+    end
+
+    function probe()
+        self.dig()
+        return not self.detect()
     end
 
     function self.digUp()
-        while self.detectUp() do
-            turtle.digUp()
+        return digUntil(turtle.digUp, self.detectUp)
+    end
+
+    function probeUp()
+        self.digUp()
+        return not self.detectUp()
+    end
+
+    function self.digDown()
+        local result = false
+        if self.detectDown() then
+            result = turtle.digDown()
         end
+        return result
+    end
+
+    function probeDown()
+        self.digDown()
+        return not self.detectDown()
     end
 
     function self.detectRight()
@@ -82,7 +111,7 @@ function terp.create()
     end
 
     for direction in { "Up", "Down", "Forward" } do
-        self["before_"..direction.lower] = { self["dig"..direction] }
+        self["before_"..direction.lower] = { self["probe"..direction] }
     end
 
     local function _if_call(func)
@@ -116,11 +145,11 @@ function terp.create()
     end
 
     function self.forward(distance)
-        return _wrap_set("forward", distance)
+        return _repeat_set("forward", distance)
     end
 
     function self.back(distance)
-        return _wrap_set("back", distance)
+        return _repeat_set("back", distance)
     end
 
     function self.reverse(distance)

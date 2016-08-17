@@ -25,22 +25,36 @@ local goTo -- Filled in further down
 local refuel -- Filled in further down
 
 local function digUp()
-    repeat until not turtle.digUp()
+    local result = false
+    while turtle.detectUp() do
+        result = turtle.digUp()
+    end
+    return result
+end
+
+local function digDown()
+    local result = false
+    while turtle.detectDown() do
+        result = turtle.digDown()
+    end
+    return result
 end
 
 local goTowardsStart = turtle.up
 local goTowardsDepth = turtle.down
 local detectDepth = turtle.detectDown
-local digDepth = turtle.digDown
+local detectStart = turtle.detectUp
+local digDepth = digDown
 local digStart = digUp
 local attackDepth = turtle.attackDown
 local attackStart = turtle.attackUp
 
 if toDepth and toDepth < 0 then
-    goTowardsDepth = turtule.up
+    goTowardsDepth = turtle.up
     goTowardsStart = turtle.down
     digDepth = digUp
-    digStart = turtle.digDown
+    digStart = digDown
+    detectStart = turtle.detectDown
     detectDepth = turtle.detectUp
     attackDepth = turtle.attackUp
     attackStart = turtle.attackDown
@@ -360,15 +374,15 @@ while not done do
 		end
 	end
 
-    if toDepth and depth == math.abs(toDepth) then
+    if toDepth and depth > math.abs(toDepth) - 2  then
         done = true
         break
     end
 
-    if toDepth and depth < math.abs(toDepth) - 2 then
+    if toDepth and depth < math.abs(toDepth) - 3 then
         tryDown()
     end
-    if toDepth and depth < math.abs(toDepth) - 1 then
+    if toDepth and depth < math.abs(toDepth) - 2 then
         tryDown()
     end
 	if not tryDown() then

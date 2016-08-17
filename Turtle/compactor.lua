@@ -4,7 +4,10 @@
 if not turtle then
     require("turtle")
 end
-require("utilities")
+
+if not utilities then
+    dofile("utilities.lua")
+end
 
 local configFile
 local args = { ... }
@@ -76,8 +79,8 @@ local config = {
             ["name"] = "ExtraUtilities:cobblestone_compressed";
             ["damage"] = 13;
         };
-        ["interval"] = 30;
-    }
+    };
+    ["interval"] = 30;
 }
 
 local slotCache = {}
@@ -186,7 +189,7 @@ function printMetadata(metadata)
 --    print(string.format("{ count = %s, name = %s, damage = %s}", tostring(metadata.count), metadata.name, tostring(metadata.damage)))
 end
 
-function transfer(from, to, amount, leave)
+function transfer(toSlot, from, to, amount, leave)
 
     if not leave then
         leave = 0
@@ -198,12 +201,12 @@ function transfer(from, to, amount, leave)
         return false
     end
 
-    transfer = amount > have and have or amount
+    transferAmount = amount > have and have or amount
 
-    turtle.transferTo(toSlot, transfer)
+    turtle.transferTo(toSlot, transferAmount)
 
-    from.count = from.count - transfer
-    to.count = to.count + transfer
+    from.count = from.count - transferAmount
+    to.count = to.count + transferAmount
 
 end
 
@@ -216,29 +219,27 @@ function filter()
         pushSide = { }
         pushDefault = { }
 
+        turtle.select(1)
+        repeat until not pullFrom()
+
         for i = 1, 16 do
-            keep = false
             turtle.select(i)
-            repeat
-                if pullFrom() then
-                    itemData = turtle.getItemDetail()
-                    if contains(config.compact, itemData) then
-                        pushTo()
-                    elseif contains(config.dropNames, itemData) then
-                        turtle.dropDown()
-                    else
-                        if contains(config.sideNames, itemData) then
-                            table.insert(pushSide, i)
-                        else
-                            table.insert(pushDefault, i)
-                        end
-                        keep = true
-                    end
-                else
-                    i = 16
-                    keep = true
+            itemData = turtle.getItemDetail()
+            if not itemData  then
+                if i < 16 then
+                    noneLeft = true
                 end
-            until keep
+            elseif contains(config.compact, itemData) then
+                pushTo()
+            elseif contains(config.dropNames, itemData) then
+                turtle.dropDown()
+            else
+                if contains(config.sideNames, itemData) then
+                    table.insert(pushSide, i)
+                else
+                    table.insert(pushDefault, i)
+                end
+            end
         end
 
         if #pushSide > 0 then
@@ -249,7 +250,7 @@ function filter()
             push(defaultTurn, sideTurn, pushDefault)
         end
 
-    until #pushSide + #pushDefault == 0
+    until noneLeft
 end
 
 function getSameItem(pullFunc, pushFunc, item)
@@ -266,37 +267,116 @@ end
 
 function fillCraftingTable()
 
-    turtle.select(config.craftingSlots[1])
-    if not pullFrom() then
-        return nil
-    end
+    print ("Filling the crafting table")
 
     local result = { }
-    local metadata = turtle.getItemDetail()
-    metadata.space = turtle.getItemSpace()
-    table.insert(result, metadata)
-    local currentType = metadata
-    for i = 2, #config.craftingSlots do
-        turtle.select(config.craftingSlots[i])
-        repeat
-            metadata = getSameItem(pullFrom, pushTo, currentType)
+    local matchingType
+    local metadata
+    local queuedItems = true
+
+    repeat
+        turtle.select(1)
+        repeat until not pullFrom()
+
+        for i = 1, 16 do
+            if i > 1 then
+                turtle.select(i)
+            end
+
+            metadata = turtle.getItemDetail()
             if not metadata then
+                print("No metadata returned for slot "..i)
+                queuedItems = false
                 break
             end
             metadata.space = turtle.getItemSpace()
-            if result[i-1].space > 0 then
-                local transfer = result[i-1].space
-                if transfer > metadata.count then
-                    transfer = metadata.count
+
+            -- Reject unfiltered items that have been added to the queue and stacks that are too
+            -- small to compact if we're still looking for the first stack.
+            if contains(config.compact, metadata) and (matchingType or metadata.count > 8)  then
+                if matchingType then
+                    -- If we have our stack return other types to the queue. Do the same if we have matching stacks, already.
+                    if #result == 9 then
+                        print("Pushing back item because the table is full")
+                        pushBack()
+                    elseif areSameType(matchingType, metadata) then
+                        print("Found additional item in slot "..i)
+                        metadata.foundIndex = i
+                        table.insert(result, metadata)
+                    else
+                        print("Pushing through non-matching item from slot "..i)
+                        pushTo()
+                    end
+                else
+                    -- Found viable stack. Start counting.
+                    matchingType = metadata
+                    metadata.foundIndex = i
+                    print("Using item in slot "..i.." as master")
+                    table.insert(result, metadata)
                 end
-                transfer(metadata, result[i-1], result[i-1].space)
+            else
+                print("Pushing through a non-compacting item, or one that has too few items to compact")
+                pushTo()
             end
-        until metadata.count > 0
-        if not metadata then
-            break
         end
-        table.insert(result, metadata)
+    until #result > 0 or not queuedItems
+
+    if #result == 0 then
+        return nil
     end
+
+    if #result < 9 and queuedItems then
+        for i = 1, #result do
+            if result[i].foundIndex ~= i then
+                turtle.select(result[i].foundIndex)
+                turtle.transferTo(i)
+                result[i].foundIndex = i
+            end
+        end
+        turtle.select(#result + 1)
+        while #result < 9 do
+            if not pullFrom() then
+                queuedItems = false
+                break
+            end
+            metadata = turtle.getItemDetail()
+            if areSameType(matchingType, metadata) then
+                metadata.foundIndex = #result + 1
+                table.insert(result, metadata)
+                turtle.select(#result + 1)
+            else
+                pushTo()
+            end
+        end
+    end
+
+    for i = 1, #result do
+        local currentIndex = result[i].foundIndex
+        if not table.contains(config.craftingSlots, currentIndex) then
+            local freeSlot
+            for j = 1, #config.craftingSlots do
+                local taken = false
+                for k = 1, #result do
+                    if result[k].foundIndex == config.craftingSlots[j] then
+                        taken = true
+                        break
+                    end
+                end
+                if not taken then
+                    freeSlot = config.craftingSlots[j]
+                    break
+                end
+            end
+
+            if not freeSlot then
+                error("Error moving stacks to crafting grid.")
+            end
+            turtle.select(currentIndex)
+            turtle.transferTo(freeSlot)
+            result[i].foundIndex = freeSlot
+        end
+    end
+
     return result
 end
 
@@ -327,7 +407,7 @@ function crossLevel(metadata, indexA, indexB, level)
         return
     end
 
-    local to, from, have, need, transfer
+    local to, from, have, need
 
     if a.count > b.count then
         fromSlot = config.craftingSlots[indexA]
@@ -342,7 +422,8 @@ function crossLevel(metadata, indexA, indexB, level)
     end
 
     turtle.select(fromSlot)
-    transfer(from, to, level - to.count, level)
+
+    transfer(toSlot, from, to, (level - to.count), level)
 end
 
 -- returns true if there were enough items to spread into an
@@ -359,12 +440,12 @@ function levelValues(metadata)
     end
 
     -- The grid is already full
-    if metadata[1].space and (total == (metadata[1].count + metadata[1].space) * 9) then
+    if metadata[1] and metadata[1].space and (total == (metadata[1].count + metadata[1].space) * 9) then
         return true
     end
 
     -- Initialize metadata for empty slots
-    for i = 0, #config.craftingSlots do
+    for i = 1, #config.craftingSlots do
         if not metadata[i] then
           metadata[i] = { }
           metadata[i].count = 0
@@ -374,7 +455,7 @@ function levelValues(metadata)
     local split = math.floor(total / 9)
     print(string.format("Split = %d", split))
 
-    for i = 1, #config.craftingSlots do
+    for i = 1, #config.craftingSlots - 1 do
         if metadata[i].count ~= split then
             for j = i + 1, #config.craftingSlots do
                 crossLevel(metadata, i, j, split)
@@ -387,47 +468,49 @@ function levelValues(metadata)
     return true
 end
 
--- return -1 if there are no more items in the queue;
--- 0 if there are items waiting, but the current compact was a noop,
--- 1 if a compact was performed
+-- return true if any stacks were compacted, which also indicates that the set of stacks has changed.
 function compact()
-    local slotsFilled = fillCraftingTable()
-    if not slotsFilled then
-        return -1
-    end
+    local slotsFilled
+    local slotsFilledCount
 
-    local result = -1
-    local pushRemainder = pushTo
-
-    if levelValues(slotsFilled) then
-        turtle.select(config.outputSlot)
-        if turtle.craft() then
-            result = 1
-            pushBack()
+    local result = false
+    repeat
+        local slotsFilled = fillCraftingTable()
+        if not slotsFilled then
+            break
         end
-    else
-        -- if there weren't enough to create a single block, push back to origin
-        -- so it doesn't get pulled in on the next flip.
-        pushRemainder = pushBack
-    end
+        -- get a count before empty metadata is added for empty slots
+        slotsFilledCount = #slotsFilled
 
-    for i = 1, #config.craftingSlots do
-        turtle.select(config.craftingSlots[i])
-        pushRemainder()
-    end
+        if levelValues(slotsFilled) then
+            turtle.select(config.outputSlot)
+            if turtle.craft() then
+                result = true
+                pushTo()
+            end
+        end
 
+        for i = 1, #config.craftingSlots do
+            turtle.select(config.craftingSlots[i])
+            pushTo()
+        end
+    -- When the slots are not full, the table filler will have tested and passed through
+    -- all remaining items in the current bin looking for matches, so the pass is complete.
+    until #slotsFilledCount < 9
     return result
 end
 
 init()
 while not done do
     filter()
-    while compact() > -1 do
+
+    -- Run stacks back and forth between the two bins until no compact operations take place.
+    repeat
         toggleInputOutputBins()
-    end
-    toggleInputOutputBins()
-    print(string.format("Waiting %d seconds before next cycle...", config.interval))
-    done = utilities.waitForEvent("terminate", config.interval)
+    until not compact()
+
+    print(string.format("Waiting %d seconds before next cycle... ([space] to break)", config.interval))
+    done = utilities.waitForEvent("key", config.interval, 32)
 end
 
 

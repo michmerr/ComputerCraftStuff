@@ -8,24 +8,24 @@ end
 
 inventory = {}
 
-function inventory.create(keepFuel)
+function inventory.create(keepItems, dropPoint)
     local self = { }
 
 
 end
 
-function inventory.decorate(terpInstance, minFuelForOperation, optimumTopOff, minFuelAfterReturn, fuelPoint)
+function inventory.decorate(terpInstance, keepItems, dropPoint)
 
-    local _refuel = Refuel.create(minFuelForOperation, optimumTopOff, minFuelAfterReturn, fuelPoint)
+    local instance = inventory.create(keepItems, dropPoint)
 
     local extension = { }
 
-    function triggerRefuel()
-        return _refuel.triggerRefuel(terpInstance)
+    function extension.triggerDrop()
+        return instance.triggerDrop(terpInstance)
     end
 
     function extension.checkFull()
-        return _refuel.checkBingo(terpInstance, safetyMargin, waypoint)
+        return _refuel.checkFull(terpInstance)
     end
 
     function extension.waitForRefueling(returnToWaypoint)

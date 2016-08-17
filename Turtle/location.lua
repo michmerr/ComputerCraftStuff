@@ -2,7 +2,11 @@
 --Date
 
 if not orientation then
-    require("orientation")
+    if require then
+        require("orientation")
+    else
+        dofile("orientation.lua")
+    end
 end
 
 location = {}

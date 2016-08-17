@@ -1,7 +1,9 @@
 --region *.lua
 --Date
 
-require("os")
+if not os then
+    require("os")
+end
 if not utilities then
     utilities = { }
 end
@@ -17,28 +19,56 @@ function table.contains(list, listItem, caseInsensitive)
             if string.lower(list[i]) == string.lower(listItem) then
                 return true
             end
-        else if list[i] == listItem then
+        elseif list[i] == listItem then
             return true
         end
     end
     return false
 end
 
+local function matchFilter(event, params, filter, filterParams)
+
+    if event ~= filter then
+        return false
+    end
+
+    if not filterParams or #filterParams == 0 then
+        return true
+    end
+
+    for i = 1 to #filterParams do
+        local fp = filterParams[i]
+        if fp ~= nil then
+            if type(fp) == "function" then
+                if not fp(params[i]) then
+                    return false
+                end
+            elseif fp ~= params[i] then
+                return false
+            end
+        end
+    end
+
+    return true
+end
+
 -- copy of os.sleep, but with check for the event we're expecting
 -- returns success, eventParam1, eventParamN, ...
-function utilities.waitForEvent(filter, timeout)
-    local timer, event, param, notification
+function utilities.waitForEvent(filter, timeout, ...)
+    local timer, event, notification
+    local filterParams = { ... }
+    local params = { }
     if (timeout and timeout > 0) then
         timer = os.startTimer( timeout )
     end
 
     repeat
         notification = { os.pullEvent() }
-        event, param = table.unpack(notification)
-    until param == timer or event == filter or not filter
+        event, params[1], params[2], params[3], params[4], params[5] = table.unpack(notification)
+    until (params[1] == timer) or matchFilter(event, params, filter, filterParams)
 
     if (param ~= timer) then
-        return table.unpack(notification)
+        return table.unpack(notification) or true
     end
 
     return false

@@ -1,6 +1,10 @@
 --region *.lua
 
-require("matrix")
+if require then
+    require("matrix")
+else
+    dofile("matrix.lua")
+end
 
 orientation = {}
 
