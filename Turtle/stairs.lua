@@ -140,77 +140,27 @@ local function changeDirection(turn)
     return turnLeft
 end
 
-function lateral(turn, width, shouldDigUp, shouldPlaceDown, shouldDigDown)
-
-    turn()
-    turn = changeDirection(turn)
-    for j = 2, width do
-        forward()
-        if shouldDigUp then
-            digUntil(turtle.digUp, turtle.detectUp)
-        end
-        if shouldPlaceDown then
-            if not place() then
-                return false
-            end
-        elseif shouldDigDown then
-            if not turtle.detectDown() then
-                turtle.digDown()
-            end
-        end
-    end
-    turn()
-    return turn
-end
-
-local function stepLayer(turn, width, depth, ceiling, c)
-    local digUp = true
-    local digDown = true
-    local placeDown = false
-
-    if c == 1 then
-        digDown = false
-        placeDown = true
-    elseif ceiling - c > 1 then
-        up()
-    elseif ceiling == 1 then
-        digDown = false
-    else
-        digUp = false
-    end
-
-    for i = 1, depth do
-        if placeDown then
-            if not place() then
-                return false
-            end
-        elseif digDown then
-            if turtle.detectDown() then
-                turtle.digDown()
-            end
-        end
-
-        if digUp then
-            digUntil(turtle.digUp, turtle.detectUp)
-        end
-        if width > 1 then
-            turn = lateral(turn, width, digUp, placeDown, digDown)
-        end
-        if i ~= depth then
-            forward()
-        end
-    end
-    return turn
-end
-
 function resupply()
+    -- this could get tricky, since we can't count on there being any sort of
+    -- clear vertical return route as there is in an excavation. This problem means
+    -- code to walk up and down the stairs as part of the navigation.
 
+    -- or just hang out until a human comes to do the resupply
 
-
-
+    print("I'm out of stair stuff. Put it in slots 2-14!")
+    repeat
+        notification = { os.pullEvent() }
+        event, p1 = table.unpack(notification)
+        if event == "key" and p1 == 57 then
+            exit()
+        end
+    until event == "turtle_inventory" and selectMaterialSlot(2, 14)
+    print("Waiting 10 seconds for additional stuff...")
+    os.sleep(10)
+    print("Go time!")
 end
 
-function simpleStepTraversal(turn, width, depth, up, action)
+function simpleStepTraversal(turn, width, depth, stairsUp, action)
     for j =1, depth do
         for i = 1, width do
             -- Our first move is forward into the current depth,
@@ -223,7 +173,7 @@ function simpleStepTraversal(turn, width, depth, up, action)
                 turn = changeDirection(turn)
             end
             forward()
-            action(i, turn, up)
+            action(i, turn, stairsUp)
         end
         -- turn back to face forward after a > 1 width traversal
         if width > 1 then
@@ -234,7 +184,7 @@ function simpleStepTraversal(turn, width, depth, up, action)
 end
 
 -- returns 0 for failure, 1 for success, 2 if stair was already there
-function layTread(iteration, turn, up)
+function layTread(iteration, turn, stairsUp)
     local pr = placeDown()
     if pr < 0 then
         resupply()
@@ -243,7 +193,7 @@ function layTread(iteration, turn, up)
     -- this *should* only be possible on the first placement, since subsequent blocks will attach the the first
     if pr == 0 then
         down()
-        if up then
+        if stairsUp then
             -- this should always work since it would extend the previous step
             pr = placeDown()
         else
@@ -277,24 +227,24 @@ function layTread(iteration, turn, up)
     return pr
 end
 
-function clearAirspace(iteration, turn, up)
+function clearAirspace(iteration, turn, stairsUp)
     digDown()
     digUp()
 end
 
-function simpleStep(turn, width, depth, up, intervalActions, count)
+function simpleStep(turn, width, depth, stairsUp, intervalActions, count)
 
     if not count then
         count = 0
     end
 
-    if (up) then
+    if (stairsUp) then
         up()
         up()
     end
 
     -- clear the airspace
-    turn = simpleStepTraversal(turn, width, depth, up, clearAirspace)
+    turn = simpleStepTraversal(turn, width, depth, stairsUp, clearAirspace)
 
     -- land on desired step
     down()
@@ -304,7 +254,7 @@ function simpleStep(turn, width, depth, up, intervalActions, count)
     end
 
     -- laydown the tread
-    turn = simpleStepTraversal(turn, width, depth, up, layTread)
+    turn = simpleStepTraversal(turn, width, depth, stairsUp, layTread)
 
     count = count + 1
     if intervalActions then
@@ -316,7 +266,7 @@ function simpleStep(turn, width, depth, up, intervalActions, count)
     return turn, count
 end
 
-function simpleFlight(turn, length, width, depth, up, intervalActions, count)
+function simpleFlight(turn, length, width, depth, stairsUp, intervalActions, count)
     -- Assumes a start position facing the direction to create the flight
     -- of stairs, immediately in front of the first step, and next to the anchor
     -- wall. Initial turn should be away from the anchoring wall. This will be
@@ -332,7 +282,7 @@ function simpleFlight(turn, length, width, depth, up, intervalActions, count)
             -- assume that a landing or other continuation makes a shallow final step ok.
             useDepth = remainderDepth
         end
-        turn, count = simpleStep(turn, width, useDepth, up, intervalActions, count)
+        turn, count = simpleStep(turn, width, useDepth, stairsUp, intervalActions, count)
     end
 
     return turn, count
@@ -361,12 +311,12 @@ function turnCorner(turn, initialTurn, centerAnchor)
     return turn
 end
 
-function simpleSpiralSide(turn, count, limit, flightLength, treadWidth, treadDepth, up, intervalActions)
+function simpleSpiralSide(turn, count, limit, flightLength, treadWidth, treadDepth, stairsUp, intervalActions)
    local steps = math.ceil(flightLength / treadDepth)
 
     --stairs
     if steps < limit - count then
-        turn, count = simpleFlight(turn, flightLength, treadWidth, treadDepth, up, intervalActions, count)
+        turn, count = simpleFlight(turn, flightLength, treadWidth, treadDepth, stairsUp, intervalActions, count)
 
         if count < limit then
             --landing
@@ -374,7 +324,7 @@ function simpleSpiralSide(turn, count, limit, flightLength, treadWidth, treadDep
             turn = turnCorner(turn, initialTurn, centerAnchor)
         end
     else
-        turn, count = simpleFlight(turn, (limit - count) * treadDepth, treadWidth, treadDepth, up, intervalActions, count)
+        turn, count = simpleFlight(turn, (limit - count) * treadDepth, treadWidth, treadDepth, stairsUp, intervalActions, count)
     end
 
     return turn, count
@@ -425,70 +375,6 @@ function simpleSpiralStairs(height, clockwise, centerAnchor, anchorWallLength, a
         end
 
         turn, count = simpleSpiralSide(turn, count, totalCount, flightLengthX, treadWidth, treadDepth, height > 0, intervalActions)
-    end
-end
-
-function step(turn, width, depth, ceiling)
-
-    for c = 1, ceiling + 1, 3 do
-        turn = stepLayer(turn, width, depth, ceiling, c)
-
-        for i = 1, math.min(3, ceiling - c - 1) do
-            up()
-        end
-    end
-
-    return turn
-end
-
-function placeTorch(turn)
-
-
-end
-
-function wall(length, turn, width, depth, ceiling, torchInterval)
-    down()
-    forward()
-    for i = width, length, width do
-        turn = step(turn, width, depth, ceiling)
-        torchWhen = torchWhen - 1
-        if torchWhen == 0 then
-            placeTorch(turn)
-        end
-    end
-    down()
-
-end
-
-function stairsDown(zLength, xWidth, turn, width, depth, ceiling, torchInterval)
-    local initialTurn = turn
-    local torchWhen = torchInterval
-    forward()
-    down()
-    turn = step(turn, width, depth, ceiling)
-    --if x > 0 then
-
-    while y + depth > 0 do
-        wall(zLength, turn, width, depth, ceiling, torchInterval)
-        initialTurn()
-        for i = math.abs(x), width do
-            forward()
-        end
-        wall(xLength, initialTurn, width, depth, ceiling, torchInterval)
-        initialTurn()
-        for i = math.abs(z), zLength - width, -1 do
-            forward()
-        end
-        wall(zLength, turn, width, depth, ceiling, torchInterval)
-        initialTurn()
-        for i = math.abs(x), xLength - width, -1 do
-            forward()
-        end
-        wall(xLength, initialTurn, width, depth, ceiling, torchInterval)
-        initialTurn()
-        for i = math.abs(z), width do
-            forward()
-        end
     end
 end
 
