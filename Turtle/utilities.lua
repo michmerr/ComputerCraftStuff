@@ -28,15 +28,15 @@ end
 
 local function matchFilter(event, params, filter, filterParams)
 
-    if event ~= filter then
-        return false
+    if event ~= filter  then
+       return false
     end
 
     if not filterParams or #filterParams == 0 then
         return true
     end
 
-    for i = 1 to #filterParams do
+    for i = 1, #filterParams do
         local fp = filterParams[i]
         if fp ~= nil then
             if type(fp) == "function" then
@@ -65,13 +65,31 @@ function utilities.waitForEvent(filter, timeout, ...)
     repeat
         notification = { os.pullEvent() }
         event, params[1], params[2], params[3], params[4], params[5] = table.unpack(notification)
-    until (params[1] == timer) or matchFilter(event, params, filter, filterParams)
+        --print(string.format("event: %s  p: %s  p: %s  p: %s", tostring(event), tostring(params[1]), tostring(params[2]), tostring(params[3])))
+    until (event == timer) or matchFilter(event, params, filter, filterParams)
 
-    if (param ~= timer) then
+    if (event ~= timer) then
         return table.unpack(notification) or true
     end
 
     return false
 end
 
+function string.split(s, separator)
+    local result = { }
+    local sepWidth = string.len(separator)
+    local index = ( sepWidth * -1) + 1
+    local toIndex
+    while index do
+        toIndex = string.find(s, separator, index + sepWidth) + 1
+        if toIndex then
+            table.insert(result, string.sub(index, toIndex))
+        else
+            table.insert(result, string.sub(index))
+        end
+        index = toIndex
+    end
+
+    return result
+end
 --endregion

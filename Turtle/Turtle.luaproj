@@ -32,6 +32,7 @@
     <Compile Include="http.lua" />
     <Compile Include="inventory.lua" />
     <Compile Include="inventoryTest.lua" />
+    <Compile Include="itemType.lua" />
     <Compile Include="location.lua" />
     <Compile Include="locationTest.lua" />
     <Compile Include="matrix.lua" />
@@ -42,6 +43,7 @@
     <Compile Include="peripheral.lua" />
     <Compile Include="redstone.lua" />
     <Compile Include="rs.lua" />
+    <Compile Include="stairs.lua" />
     <Compile Include="term.lua" />
     <Compile Include="terp.lua" />
     <Compile Include="terpCommands.lua" />

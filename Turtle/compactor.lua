@@ -8,6 +8,9 @@ end
 if not utilities then
     dofile("utilities.lua")
 end
+if not itemType then
+    dofile("itemType.lua")
+end
 
 local configFile
 local args = { ... }
@@ -15,6 +18,29 @@ local args = { ... }
 if #args > 0 then
     configFile = args[1]
 end
+
+local itemlist = itemTypeCollection.new( {
+    "minecraft:coal:0";
+    "minecraft:cobblestone:0";
+    "ExtraUtilities:cobblestone_compressed:0";  -- Compressed cobblestone
+    "ExtraUtilities:cobblestone_compressed:1";  -- Double cobble
+    "ExtraUtilities:cobblestone_compressed:2";  -- Triple cobble
+    "ExtraUtilities:cobblestone_compressed:3";  -- Quad cobble
+    "minecraft:dirt:0";
+    "ExtraUtilities:cobblestone_compressed:8";  -- Compressed dirt
+    "ExtraUtilities:cobblestone_compressed:9";  -- Double dirt
+    "ExtraUtilities:cobblestone_compressed:10";  -- Triple dirt
+    "ExtraUtilities:cobblestone_compressed:11";  -- Quad dirt
+    "minecraft:gravel:0";
+    "ExtraUtilities:cobblestone_compressed:12";  -- Compressed Gravel
+    "minecraft:redstone:0";
+    "ProjRed|Core:projectred.core.part:37";  -- Ruby
+    "ProjRed|Core:projectred.core.part:38";  -- Sapphire
+    "ProjRed|Core:projectred.core.part:0";  -- Peridot
+    "ProjRed|Core:projectred.core.part:56"; -- Electrotine
+    "Forestry:apatite:0";
+    "Thaumcraft:ItemResource:6"; -- Amber
+} )
 
 local config = {
     ["craftingSlots"] = { 1; 2; 3; 5; 6; 7; 9; 10; 11 };
@@ -26,60 +52,7 @@ local config = {
     -- config.dropNames = nil
     -- item names to push to the non-default side
     -- config.sideNames = nil
-    ["compact"] = {
-        {
-            ["name"] = "minecraft:dirt";
-            ["damage"] = 0;
-        };
-        {
-            ["name"] = "minecraft:cobblestone";
-            ["damage"] = 0;
-        };
-        {
-            ["name"] = "minecraft:gravel";
-            ["damage"] = 0;
-        };
-        {
-            ["name"] = "ExtraUtilities:cobblestone_compressed";
-            ["damage"] = 0;
-        };
-        {
-            ["name"] = "ExtraUtilities:cobblestone_compressed";
-            ["damage"] = 1;
-        };
-        {
-            ["name"] = "ExtraUtilities:cobblestone_compressed";
-            ["damage"] = 2;
-        };
-        {
-            ["name"] = "ExtraUtilities:cobblestone_compressed";
-            ["damage"] = 3;
-        };
-        {
-            ["name"] = "ExtraUtilities:cobblestone_compressed";
-            ["damage"] = 8;
-        };
-        {
-            ["name"] = "ExtraUtilities:cobblestone_compressed";
-            ["damage"] = 9;
-        };
-        {
-            ["name"] = "ExtraUtilities:cobblestone_compressed";
-            ["damage"] = 10;
-        };
-        {
-            ["name"] = "ExtraUtilities:cobblestone_compressed";
-            ["damage"] = 11;
-        };
-        {
-            ["name"] = "ExtraUtilities:cobblestone_compressed";
-            ["damage"] = 12;
-        };
-        {
-            ["name"] = "ExtraUtilities:cobblestone_compressed";
-            ["damage"] = 13;
-        };
-    };
+    ["compact"] =  itemlist;
     ["interval"] = 30;
 }
 
@@ -186,7 +159,7 @@ function contains(t, item)
 end
 
 function printMetadata(metadata)
---    print(string.format("{ count = %s, name = %s, damage = %s}", tostring(metadata.count), metadata.name, tostring(metadata.damage)))
+   print(string.format("%s:%s (%s/%s) [%s]", metadata.name, tostring(metadata.damage), tostring(metadata.count), tostring(metadata.space) , tostring(metadata.indexFound)))
 end
 
 function transfer(toSlot, from, to, amount, leave)
@@ -201,7 +174,7 @@ function transfer(toSlot, from, to, amount, leave)
         return false
     end
 
-    transferAmount = amount > have and have or amount
+    transferAmount = math.min(amount, have)
 
     turtle.transferTo(toSlot, transferAmount)
 
@@ -229,12 +202,12 @@ function filter()
                 if i < 16 then
                     noneLeft = true
                 end
-            elseif contains(config.compact, itemData) then
+            elseif config.compact.get(itemData) then
                 pushTo()
-            elseif contains(config.dropNames, itemData) then
+            elseif config.dropNames and config.dropNames.get(itemData) then
                 turtle.dropDown()
             else
-                if contains(config.sideNames, itemData) then
+                if config.sideNames and config.sideNames.get(itemData) then
                     table.insert(pushSide, i)
                 else
                     table.insert(pushDefault, i)
@@ -297,25 +270,25 @@ function fillCraftingTable()
                 if matchingType then
                     -- If we have our stack return other types to the queue. Do the same if we have matching stacks, already.
                     if #result == 9 then
-                        print("Pushing back item because the table is full")
+                      --  print("Pushing back item because the table is full")
                         pushBack()
                     elseif areSameType(matchingType, metadata) then
-                        print("Found additional item in slot "..i)
+                     --   print("Found additional item in slot "..i)
                         metadata.foundIndex = i
                         table.insert(result, metadata)
                     else
-                        print("Pushing through non-matching item from slot "..i)
+                       -- print("Pushing through non-matching item from slot "..i)
                         pushTo()
                     end
                 else
                     -- Found viable stack. Start counting.
                     matchingType = metadata
                     metadata.foundIndex = i
-                    print("Using item in slot "..i.." as master")
+                    print("Will craft using items of the type in slot "..i)
                     table.insert(result, metadata)
                 end
             else
-                print("Pushing through a non-compacting item, or one that has too few items to compact")
+                -- print("Pushing through a non-compacting item, or one that has too few items to compact")
                 pushTo()
             end
         end
@@ -399,15 +372,22 @@ function getSlotCount(metadata, index)
 end
 
 function crossLevel(metadata, indexA, indexB, level)
-
+    local a, b
+    for i = 1, #metadata do
+        if metadata[i].foundIndex == config.craftingSlots[indexA] then
+            a = metadata[i]
+        elseif metadata[i].foundIndex == config.craftingSlots[indexB] then
+            b = metadata[i]
+        end
+    end
     local a = metadata[indexA]
     local b = metadata[indexB]
-
+ --   print(string.format("%d %d %d %d : %d %d %d %d", a.count, indexA, a.foundIndex, config.craftingSlots[indexA], b.count, indexB, b.foundIndex, config.craftingSlots[indexB]))
     if (a.count >= level and b.count >= level) or (a.count <= level and b.count <= level) then
         return
     end
 
-    local to, from, have, need
+    local to, from, need
 
     if a.count > b.count then
         fromSlot = config.craftingSlots[indexA]
@@ -421,9 +401,13 @@ function crossLevel(metadata, indexA, indexB, level)
         to = a
     end
 
+    need = level - to.count
+
     turtle.select(fromSlot)
 
-    transfer(toSlot, from, to, (level - to.count), level)
+--    print("transfer to:"..toSlot.." from:"..fromSlot.." need: "..need.." level: "..level)
+--    utilities.waitForEvent("key", 10, 32)
+    transfer(toSlot, from, to, need, level)
 end
 
 -- returns true if there were enough items to spread into an
@@ -444,16 +428,29 @@ function levelValues(metadata)
         return true
     end
 
+    local tMetadata = { }
     -- Initialize metadata for empty slots
     for i = 1, #config.craftingSlots do
-        if not metadata[i] then
-          metadata[i] = { }
-          metadata[i].count = 0
+        local found = false
+        for j = 1, #metadata do
+            if metadata[j].foundIndex == config.craftingSlots[i] then
+                table.insert(tMetadata, metadata[j])
+                found = true
+                break
+            end
+        end
+        if not found then
+            local blank = { }
+            blank.count = 0
+            blank.foundIndex = config.craftingSlots[i]
+            table.insert(tMetadata, blank)
         end
     end
 
+    metadata = tMetadata
+
     local split = math.floor(total / 9)
-    print(string.format("Split = %d", split))
+    print(string.format("Average = %d", split))
 
     for i = 1, #config.craftingSlots - 1 do
         if metadata[i].count ~= split then
@@ -484,7 +481,9 @@ function compact()
 
         if levelValues(slotsFilled) then
             turtle.select(config.outputSlot)
+            print("crafting...")
             if turtle.craft() then
+                print("success!")
                 result = true
                 pushTo()
             end
@@ -496,7 +495,7 @@ function compact()
         end
     -- When the slots are not full, the table filler will have tested and passed through
     -- all remaining items in the current bin looking for matches, so the pass is complete.
-    until #slotsFilledCount < 9
+    until slotsFilledCount < 9
     return result
 end
 
@@ -510,7 +509,7 @@ while not done do
     until not compact()
 
     print(string.format("Waiting %d seconds before next cycle... ([space] to break)", config.interval))
-    done = utilities.waitForEvent("key", config.interval, 32)
+    done = ("timer" ~= utilities.waitForEvent("key", config.interval, 57))
 end
 
 
