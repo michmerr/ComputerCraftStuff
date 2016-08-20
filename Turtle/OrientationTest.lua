@@ -1,7 +1,11 @@
 --region *.lua
 --Date
 
-require("orientation")
+if require then
+    require("orientation")
+else
+    dofile("orientation.lua")
+end
 
 local function testCreate()
     local target = orientation.create()

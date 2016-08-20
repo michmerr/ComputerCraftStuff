@@ -1,14 +1,14 @@
 --region *.lua
 --Date
-matrix = { }
-local mt = { __index = matrix }
+local matrixBase = { }
+local mt = { __index = matrixBase }
 
-function matrix.new(matrixArray)
+function new(matrixArray)
     local self = matrixArray or { }
     return setmetatable(self, mt)
 end
 
-function matrix:multiply(m)
+function matrixBase:multiply(m)
 
     assert(m, "matrix cannot be nil")
     assert(#m > 0, "matrix cannot be empty.")
@@ -42,7 +42,7 @@ function matrix:multiply(m)
 end
 
 
-function matrix:tostring()
+function matrixBase:tostring()
     local max = self[1][1]
     local min = self[1][1]
     for i = 1, #self do
@@ -61,7 +61,7 @@ function matrix:tostring()
     return result
 end
 
-function matrix:equals(m)
+function matrixBase:equals(m)
     if not m or type(m) ~= "table" or #m ~= #self then
         return false
     end
@@ -79,9 +79,9 @@ function matrix:equals(m)
     return true
 end
 
-mt.__eq = matrix.equals
-mt.__mul = matrix.multiply
-mt.__tostring = matrix.tostring
+mt.__eq = matrixBase.equals
+mt.__mul = matrixBase.multiply
+mt.__tostring = matrixBase.tostring
 
 
 --endregion

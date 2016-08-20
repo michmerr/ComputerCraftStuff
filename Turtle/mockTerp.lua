@@ -2,9 +2,7 @@
 --Date
 --Mock terp
 
-terp = {}
-
-function terp.create()
+function create()
     local self = {}
 
     function self.extend(table)

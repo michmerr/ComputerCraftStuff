@@ -89,4 +89,8 @@ if not os.sleep then
     end
 end
 
+if not os.loadAPI then
+    function os.loadAPI( apiName )
+    end
+end
 return os

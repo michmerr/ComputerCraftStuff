@@ -1,4 +1,14 @@
-a= ... 
-print a[0]
+local b
+local a = " return { foo = 1 }"
+local bar = false
+function c() 
+	if bar then return nil end
+	bar = true
+	return a
+end
+
+b = load(c)()
+print(b.foo)
+
 
 	

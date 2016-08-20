@@ -12,7 +12,7 @@ local xDir = 0
 local zDir = 1
 
 function selectMaterialSlot(lower, upper, types)
-    if turtle.getSelectedSlot() >= lower and turtle.getSelectedSlot <= upper and turtle.getItemCount() > 0 then
+    if turtle.getSelectedSlot() >= lower and turtle.getSelectedSlot() <= upper and turtle.getItemCount() > 0 then
         return true
     end
 --TODO: check against list of acceptable item types
@@ -40,11 +40,25 @@ local function digUntil(digFunc, detectFunc)
     return result
 end
 
+local function dig()
+  return digUntil(turtle.dig, turtle.detect)
+end
+
+local function digUp()
+  return digUntil(turtle.digUp, turtle.detectUp)
+end
+
+local function digDown()
+  return digUntil(turtle.digDown, turtle.detectDown)
+end
+
+
 local function move(detectFunc, digFunc, moveFunc, attackFunc, suckFunc)
     if detectFunc() then
         digUntil(digFunc, detectFunc)
     end
 
+    -- I feel like I'm encouraging some twisted behavior right here.
     if not moveFunc() then
         while attackFunc() do
             suckFunc()
@@ -180,7 +194,7 @@ function simpleStepTraversal(turn, width, depth, stairsUp, action)
             turn()
         end
     end
-
+    return turn
 end
 
 -- returns 0 for failure, 1 for success, 2 if stair was already there
@@ -232,7 +246,7 @@ function clearAirspace(iteration, turn, stairsUp)
     digUp()
 end
 
-function simpleStep(turn, width, depth, stairsUp, intervalActions, count)
+function simpleStep(turn, startTurn, width, depth, stairsUp, intervalActions, count)
 
     if not count then
         count = 0
@@ -249,8 +263,10 @@ function simpleStep(turn, width, depth, stairsUp, intervalActions, count)
     -- land on desired step
     down()
     -- back up to edge of previous step
-    for i = 2, depth do
+    if depth > 1 then
+      for i = 2, depth do
         turtle.back()
+      end
     end
 
     -- laydown the tread
@@ -266,12 +282,11 @@ function simpleStep(turn, width, depth, stairsUp, intervalActions, count)
     return turn, count
 end
 
-function simpleFlight(turn, length, width, depth, stairsUp, intervalActions, count)
+function simpleFlight(turn, startTurn, length, width, depth, stairsUp, intervalActions, count)
     -- Assumes a start position facing the direction to create the flight
     -- of stairs, immediately in front of the first step, and next to the anchor
     -- wall. Initial turn should be away from the anchoring wall. This will be
     -- passed to intervalAction functions so they can orient themselves.
-    local startTurn = turn
 
     local stepCount = math.floor(length / depth)
     local remainderDepth = length % depth
@@ -282,7 +297,7 @@ function simpleFlight(turn, length, width, depth, stairsUp, intervalActions, cou
             -- assume that a landing or other continuation makes a shallow final step ok.
             useDepth = remainderDepth
         end
-        turn, count = simpleStep(turn, width, useDepth, stairsUp, intervalActions, count)
+        turn, count = simpleStep(turn, startTurn, width, useDepth, stairsUp, intervalActions, count)
     end
 
     return turn, count
@@ -305,26 +320,26 @@ function turnCorner(turn, initialTurn, centerAnchor)
                 forward()
             end
         else
-            turn = initialTurn()
+            turn = initialTurn
         end
     end
     return turn
 end
 
-function simpleSpiralSide(turn, count, limit, flightLength, treadWidth, treadDepth, stairsUp, intervalActions)
+function simpleSpiralSide(turn, initialTurn, count, limit, flightLength, treadWidth, treadDepth, stairsUp, intervalActions)
    local steps = math.ceil(flightLength / treadDepth)
 
     --stairs
     if steps < limit - count then
-        turn, count = simpleFlight(turn, flightLength, treadWidth, treadDepth, stairsUp, intervalActions, count)
+        turn, count = simpleFlight(turn, initialTurn, flightLength, treadWidth, treadDepth, stairsUp, intervalActions, count)
 
         if count < limit then
             --landing
-            turn, count = simpleStep(turn, treadWidth, treadWidth, height > 1, intervalActions, count)
+            turn, count = simpleStep(turn, initialTurn, treadWidth, treadWidth, height > 1, intervalActions, count)
             turn = turnCorner(turn, initialTurn, centerAnchor)
         end
     else
-        turn, count = simpleFlight(turn, (limit - count) * treadDepth, treadWidth, treadDepth, stairsUp, intervalActions, count)
+        turn, count = simpleFlight(turn, initialTurn, (limit - count) * treadDepth, treadWidth, treadDepth, stairsUp, intervalActions, count)
     end
 
     return turn, count
@@ -346,35 +361,35 @@ function simpleSpiralStairs(height, clockwise, centerAnchor, anchorWallLength, a
 
     local turn, initialTurn
     if (clockwise and centerAnchor) or (not clockwise and not centerAnchor) then
-        turn = turnLeft()
+        turn = turnLeft
     else
-        turn = turnRight()
+        turn = turnRight
     end
     initialTurn = turn
 
     if not centerAnchor then
         -- flush landing
         up()
-        turn, count = simpleStep(turn, treadWidth, treadWidth, false, intervalActions, count)
+        turn, count = simpleStep(turn, initialTurn, treadWidth, treadWidth, false, intervalActions, count)
     end
 
     while count < totalCount do
-        turn, count = simpleSpiralSide(turn, count, totalCount, flightLengthZ, treadWidth, treadDepth, height > 0, intervalActions)
+        turn, count = simpleSpiralSide(turn, initialTurn, count, totalCount, flightLengthZ, treadWidth, treadDepth, height > 0, intervalActions)
         if count == totalCount then
             break
         end
 
-        turn, count = simpleSpiralSide(turn, count, totalCount, flightLengthX, treadWidth, treadDepth, height > 0, intervalActions)
+        turn, count = simpleSpiralSide(turn, initialTurn, count, totalCount, flightLengthX, treadWidth, treadDepth, height > 0, intervalActions)
         if count == totalCount then
             break
         end
 
-        turn, count = simpleSpiralSide(turn, count, totalCount, flightLengthZ, treadWidth, treadDepth, height > 0, intervalActions)
+        turn, count = simpleSpiralSide(turn, initialTurn, count, totalCount, flightLengthZ, treadWidth, treadDepth, height > 0, intervalActions)
         if count == totalCount then
             break
         end
 
-        turn, count = simpleSpiralSide(turn, count, totalCount, flightLengthX, treadWidth, treadDepth, height > 0, intervalActions)
+        turn, count = simpleSpiralSide(turn, initialTurn, count, totalCount, flightLengthX, treadWidth, treadDepth, height > 0, intervalActions)
     end
 end
 

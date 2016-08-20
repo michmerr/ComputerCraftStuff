@@ -4,13 +4,20 @@
 if not turtle then
     require("turtle")
 end
+if not os then
+    require("os")
+end
 
 if not utilities then
-    dofile("utilities.lua")
+    if require then
+        require("utilities")
+    else
+        os.loadAPI("utilities")
+    end
 end
-if not itemType then
-    dofile("itemType.lua")
-end
+
+utiltities.require("itemType")
+utiltities.require("itemTypeCollection")
 
 local configFile
 local args = { ... }
@@ -33,6 +40,9 @@ local itemlist = itemTypeCollection.new( {
     "ExtraUtilities:cobblestone_compressed:11";  -- Quad dirt
     "minecraft:gravel:0";
     "ExtraUtilities:cobblestone_compressed:12";  -- Compressed Gravel
+    "minecraft:sand:0";
+    "ExtraUtilities:cobblestone_compressed:14";  -- Compressed sand
+    "ExtraUtilities:cobblestone_compressed:15";  -- Double sand
     "minecraft:redstone:0";
     "ProjRed|Core:projectred.core.part:37";  -- Ruby
     "ProjRed|Core:projectred.core.part:38";  -- Sapphire
@@ -144,20 +154,6 @@ function areSameType(a, b)
     return a.damage == b.damage
 end
 
-function contains(t, item)
-    if not t or not item then
-        return false
-    end
-
-    for i = 1, #t do
-        if areSameType(t[i], item) then
---            print("matched")
-            return true
-        end
-    end
-    return false
-end
-
 function printMetadata(metadata)
    print(string.format("%s:%s (%s/%s) [%s]", metadata.name, tostring(metadata.damage), tostring(metadata.count), tostring(metadata.space) , tostring(metadata.indexFound)))
 end
@@ -266,7 +262,7 @@ function fillCraftingTable()
 
             -- Reject unfiltered items that have been added to the queue and stacks that are too
             -- small to compact if we're still looking for the first stack.
-            if contains(config.compact, metadata) and (matchingType or metadata.count > 8)  then
+            if config.compact.contains(metadata) and (matchingType or metadata.count > 8)  then
                 if matchingType then
                     -- If we have our stack return other types to the queue. Do the same if we have matching stacks, already.
                     if #result == 9 then
@@ -509,7 +505,7 @@ while not done do
     until not compact()
 
     print(string.format("Waiting %d seconds before next cycle... ([space] to break)", config.interval))
-    done = ("timer" ~= utilities.waitForEvent("key", config.interval, 57))
+    done = utilities.waitForEvent("key", config.interval, 57)
 end
 
 

@@ -1,46 +1,15 @@
 --region *.lua
 --Date
 
-waypoint = { }
-waypoints = { }
-
--- Checks the equality of the waypoints' locations. Ignores label and connections
-function waypoint.equal(a, b)
-    if not a and not b then
-        return true
+if not waypoint then
+    if require then
+        require("waypoint")
+    else
+        os.loadAPI("waypoint")
     end
-    if not a or not b then
-        return false
-    end
-
-    return a.x == b.x and a.y == b.y and a.z == b.z
 end
 
-function waypoint.create(label, x, y, z)
-
-    local self = {
-         ["label"] = label;
-         ["x"] = x;
-         ["y"] = y;
-         ["z"] = z;
-         }
-
-    function self.equals(...)
-        local args = { ... }
-        if #args == 1 and type(args[1] == "table") then
-            return waypoint.equal(self, args[1])
-        elseif #args == 3 then
-            return self.x == args[1] and self.y == args[2] and self.z == args[3]
-        else
-            error("Expected either a waypoint table or x, y, z coordinates")
-        end
-    end
-
-    return self
-end
-
-
-function waypoints.create( ... )
+function create( ... )
     local self = { }
 
     local items = { ... }
@@ -58,7 +27,7 @@ function waypoints.create( ... )
     end
 
     -- Walks back up the list of waypoints to the target waypoint, removing any side-trips
-    function findRoute(to)
+    function self.findRoute(to)
         local result = { }
         for i = #items, 1, -1 do
             for j = i - 1, 1, -1 do
@@ -75,14 +44,14 @@ function waypoints.create( ... )
         return result
     end
 
-    function self.howFar(x, y, z, waypoint)
+    function self.howFar(x, y, z, wp)
         local w = items[#items]
         local result = math.abs(x - w.x) + math.abs(y - w.y) + math.abs(z - w.z)
-        if w.equals(waypoint) then
+        if w.equals(wp) then
             return result
         end
 
-        local route = findRoute(waypoint)
+        local route = findRoute(wp)
         -- Add the combined distances between waypoints to the distance to the most recent waypoint
         for i = 2, #routes do
             local t = routes[i]
@@ -93,8 +62,8 @@ function waypoints.create( ... )
         return result
     end
 
-    function self.add(waypoint)
-        table.insert(items, waypoint)
+    function self.add(wp)
+        table.insert(items, wp)
     end
 
     function self.remove(index)
@@ -108,9 +77,9 @@ function waypoints.create( ... )
     return self
 end
 
-function waypoints.decorate(terpInstance)
+function decorate(terpInstance)
 
-    local _waypoints = waypoints.create()
+    local _waypoints = create()
     local _howFar = terpInstance.howFar
 
     local self = { }
@@ -118,10 +87,10 @@ function waypoints.decorate(terpInstance)
     function self.setWaypoint(label, xCoord, yCoord, zCoord)
         local result
         if xCoord and yCoord and zCoord then
-            result = waypoint.create(label, xCoord, yCoord, zCoord)
+            result = waypoint.new(label, xCoord, yCoord, zCoord)
         else
             local currentLocation = terpInstance.getlocation()
-            result = waypoint.create(label, currentLocation.x, currentLocation.y, currentLocation.z)
+            result = waypoint.new(label, currentLocation.x, currentLocation.y, currentLocation.z)
         end
         _waypoints.add(result)
         return result
@@ -134,11 +103,11 @@ function waypoints.decorate(terpInstance)
     function self.howFar(...)
         local args = { ... }
         if #args == 1 then
-            waypoint = args[1]
-            if type(waypoint) == "table" then
-                return _waypoints.howFar(waypoint)
+            wp = args[1]
+            if type(wp) == "table" then
+                return _waypoints.howFar(wp)
             else
-                return _waypoints.howFar(_waypoints.get(waypoint))
+                return _waypoints.howFar(_waypoints.get(wp))
             end
         elseif #args == 3 then
             return _howFar(args[1], args[2], args[3])
@@ -161,6 +130,8 @@ function waypoints.decorate(terpInstance)
     terpInstance.extend(self)
 
 end
+
+
 
 
 --endregion

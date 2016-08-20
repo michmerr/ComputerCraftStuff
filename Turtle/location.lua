@@ -2,16 +2,10 @@
 --Date
 
 if not orientation then
-    if require then
-        require("orientation")
-    else
-        dofile("orientation.lua")
-    end
+    os.loadAPI("orientation")
 end
 
-location = {}
-
-function location.create(state)
+function create(state)
     local self = orientation.create(state and state.attitude)
 
     local x = state and state.x or 0
@@ -60,9 +54,9 @@ function location.create(state)
     return self
 end
 
-function location.decorate(targetTerp)
+function decorate(targetTerp)
 
-    local _location = location.create()
+    local _location = create()
 
     local result = {}
 
@@ -74,15 +68,15 @@ function location.decorate(targetTerp)
         result["after_turn"..direction] = _location["turn"..direction]
     end
 
-    result.getlocation = _location.getlocation
-    result.howFar = _location.howFar
+    result.getlocation = _getlocation
+    result.howFar = _howFar
 
     function turnTo(x, z)
         if math.abs(x) == math.abs(y) then
             error("90 degree directions only. One value must be 0, and the other must be positive or negative to indicate the facing along that axis.")
         end
 
-        local facing = _location.translateForward()
+        local facing = _translateForward()
 
         if (z < 0) then
             if facing[1] > 0 then
@@ -124,7 +118,7 @@ function location.decorate(targetTerp)
     end
 
     function result.moveTo(x, y, z)
-        local start = _location.getlocation()
+        local start = _getlocation()
 
         dX = x - start.x
         dY = y - start.y

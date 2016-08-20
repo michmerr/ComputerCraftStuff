@@ -25,6 +25,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="bit.lua" />
+    <Compile Include="bootstrap.lua" />
     <Compile Include="buffer.lua" />
     <Compile Include="compactor.lua" />
     <Compile Include="e2.lua" />
@@ -33,9 +34,11 @@
     <Compile Include="inventory.lua" />
     <Compile Include="inventoryTest.lua" />
     <Compile Include="itemType.lua" />
+    <Compile Include="itemTypeCollection.lua" />
     <Compile Include="location.lua" />
     <Compile Include="locationTest.lua" />
     <Compile Include="matrix.lua" />
+    <Compile Include="mockorientation.lua" />
     <Compile Include="mockTerp.lua" />
     <Compile Include="orientation.lua" />
     <Compile Include="orientationTest.lua" />
@@ -53,8 +56,10 @@
     <Compile Include="turtle.lua" />
     <Compile Include="terpRefuel.lua" />
     <Compile Include="utilities.lua" />
-    <Compile Include="waypoints.lua" />
+    <Compile Include="waypointCollection.lua" />
+    <Compile Include="waypoint.lua" />
     <Compile Include="waypointsTest.lua" />
+    <Compile Include="_bootstrap.lua" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
 </Project>

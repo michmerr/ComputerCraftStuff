@@ -5,11 +5,7 @@ if not turtle then
     require("turtle")
 end
 
-if not terp then
-    terp = {}
-end
-
-function terp.create()
+function create()
     local self = {}
 
     -- This can be used to add extensions to this instance.

@@ -1,29 +1,27 @@
 --region *.lua
 --Date
 
-local function loadDependency(dep)
-    if not _G[dep] then
-        if require then
-            require(dep)
-        else
-            dofile(dep..".lua")
-        end
+if not utilities then
+    if require then
+        require("utilities")
+    else
+        dofile("utilities")
     end
 end
 
-loadDependency("terp")
-loadDependency("location")
-loadDependency("terpRefuel")
+utilities.require("terp")
+utilities.require("location")
+utilities.require("terpRefuel")
 
-function terpCommands.createDefault()
+function createDefault()
     local result = terp.create()
     location.decorate(result)
     terpRefuel.decorate(result, true)
-    local commands = terpCommands.create(result)
+    local commands = decorate(result)
     return result
 end
 
-function terpCommands.decorate(terpTarget)
+function decorate(terpTarget)
 
     local self = {}
 

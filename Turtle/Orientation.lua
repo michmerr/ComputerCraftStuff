@@ -3,12 +3,10 @@
 if require then
     require("matrix")
 else
-    dofile("matrix.lua")
+    os.loadAPI("matrix")
 end
 
-orientation = {}
-
-function orientation.create(state)
+function create(state)
 
     local attitude = matrix.new(state or {
             { 1; 0; 0 };

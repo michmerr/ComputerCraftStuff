@@ -1,15 +1,15 @@
 --region *.lua
 
-require("location")
-require("terp")
-require("utilities")
+if not utilities then dofile("utilities") end
+utilities.require("location")
+utilities.require("terp")
 if not turtle then
     require("turtle")
 end
 
 terpRefuel = {}
 
-function terpRefuel.create(useInventory, minFuelForOperation, optimumTopOff, minFuelAfterReturn, fuelPoint)
+function create(useInventory, minFuelForOperation, optimumTopOff, minFuelAfterReturn, fuelPoint)
 
     local waitForFuelLevel = minFuelForOperation or 500
     local takeFuelUntilLevel = optimumTopOff
@@ -133,9 +133,9 @@ function terpRefuel.create(useInventory, minFuelForOperation, optimumTopOff, min
     return self
 end
 
-function terpRefuel.decorate(terpInstance, minFuelForOperation, optimumTopOff, minFuelAfterReturn, fuelPoint)
+function decorate(terpInstance, minFuelForOperation, optimumTopOff, minFuelAfterReturn, fuelPoint)
 
-    local _refuel = Refuel.create(minFuelForOperation, optimumTopOff, minFuelAfterReturn, fuelPoint)
+    local _refuel = create(minFuelForOperation, optimumTopOff, minFuelAfterReturn, fuelPoint)
 
     local extension = { }
 

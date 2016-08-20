@@ -8,6 +8,18 @@ if not utilities then
     utilities = { }
 end
 
+function utilites.require(modname)
+    if _G[modname] then
+        return
+    end
+    if require then
+        require(modname)
+    else
+        os.loadAPI(modname)
+    end
+end
+
+
 function table.contains(list, listItem, caseInsensitive)
     if not list or type(list) ~= "table" then
         return false
@@ -66,9 +78,9 @@ function utilities.waitForEvent(filter, timeout, ...)
         notification = { os.pullEvent() }
         event, params[1], params[2], params[3], params[4], params[5] = table.unpack(notification)
         --print(string.format("event: %s  p: %s  p: %s  p: %s", tostring(event), tostring(params[1]), tostring(params[2]), tostring(params[3])))
-    until (event == timer) or matchFilter(event, params, filter, filterParams)
+    until (event == "timer" and params[1] == timer) or matchFilter(event, params, filter, filterParams)
 
-    if (event ~= timer) then
+    if not (event == "timer" and params[1] == timer) then
         return table.unpack(notification) or true
     end
 
