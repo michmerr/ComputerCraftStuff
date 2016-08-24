@@ -24,46 +24,54 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="bit.lua" />
+    <Compile Include="rom\apis\bit.lua" />
     <Compile Include="bootstrap.lua" />
-    <Compile Include="buffer.lua" />
+    <Compile Include="rom\apis\buffer.lua" />
     <Compile Include="compactor.lua" />
     <Compile Include="e2.lua" />
-    <Compile Include="fs.lua" />
-    <Compile Include="http.lua" />
+    <Compile Include="rom\apis\fs.lua" />
+    <Compile Include="rom\apis\http.lua" />
     <Compile Include="inventory.lua" />
-    <Compile Include="inventoryTest.lua" />
+    <Compile Include="test\inventoryTest.lua" />
     <Compile Include="itemType.lua" />
     <Compile Include="itemTypeCollection.lua" />
     <Compile Include="itemTypeData.lua" />
     <Compile Include="location.lua" />
-    <Compile Include="locationTest.lua" />
+    <Compile Include="test\locationTest.lua" />
     <Compile Include="matrix.lua" />
-    <Compile Include="mockorientation.lua" />
-    <Compile Include="mockTerp.lua" />
+    <Compile Include="test\mocks\orientation.lua" />
+    <Compile Include="test\mocks\terp.lua" />
     <Compile Include="orientation.lua" />
-    <Compile Include="orientationTest.lua" />
-    <Compile Include="os.lua" />
-    <Compile Include="peripheral.lua" />
+    <Compile Include="test\orientationTest.lua" />
+    <Compile Include="rom\apis\os.lua" />
+    <Compile Include="rom\apis\peripheral.lua" />
     <Compile Include="recipe.lua" />
-    <Compile Include="redstone.lua" />
-    <Compile Include="rs.lua" />
+    <Compile Include="rom\apis\redstone.lua" />
+    <Compile Include="rom\apis\rs.lua" />
     <Compile Include="stairs.lua" />
-    <Compile Include="term.lua" />
+    <Compile Include="rom\apis\term.lua" />
     <Compile Include="terp.lua" />
     <Compile Include="terpCommands.lua" />
-    <Compile Include="terpCommandsTest.lua" />
-    <Compile Include="terpRefuelTest.lua" />
-    <Compile Include="terpTest.lua" />
-    <Compile Include="test.lua" />
+    <Compile Include="test\terpCommandsTest.lua" />
+    <Compile Include="test\terpRefuelTest.lua" />
+    <Compile Include="test\terpTest.lua" />
+    <Compile Include="test\test.lua" />
+    <Compile Include="test\testCommon.lua" />
     <Compile Include="Transfer.lua" />
-    <Compile Include="turtle.lua" />
+    <Compile Include="rom\apis\turtle\turtle.lua" />
     <Compile Include="terpRefuel.lua" />
     <Compile Include="utilities.lua" />
     <Compile Include="waypointCollection.lua" />
     <Compile Include="waypoint.lua" />
-    <Compile Include="waypointsTest.lua" />
+    <Compile Include="test\waypointsTest.lua" />
     <Compile Include="_bootstrap.lua" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="rom\" />
+    <Folder Include="rom\apis\" />
+    <Folder Include="rom\apis\turtle\" />
+    <Folder Include="test\" />
+    <Folder Include="test\mocks\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
 </Project>

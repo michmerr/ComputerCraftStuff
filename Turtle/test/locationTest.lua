@@ -2,60 +2,14 @@
 
 --Mock terp
 
-if require then
-    terp = require("mockTerp")
-else
-    if terp then
-        os.unloadAPI("terp")
-    end
-    os.loadAPI("test/terp")
+if not testCommon then
+    os.loadAPI("test/testCommon")
 end
 
---Mock orientation base
-if orientation then
-    if require then
-        orientation = require("test/orientation")
-    else
-        os.unloadAPI("orientation")
-        os.loadAPI("test/orientation")
-    end
-else
-    if require then
-        require("test/orientation")
-    else
-        os.loadAPI("test/orientation")
-    end
-end
-
-if location then
-    if require then
-        require("location")
-    else
-        os.unloadAPI("location")
-        os.loadAPI("location")
-    end
-else
-    if require then
-        require("location")
-    else
-        os.loadAPI("location")
-    end
-end
-
-if matrix then
-    if require then
-        require("matrix")
-    else
-        os.unloadAPI("matrix")
-        os.loadAPI("matrix")
-    end
-else
-    if require then
-        require("matrix")
-    else
-        os.loadAPI("matrix")
-    end
-end
+testCommon.reloadAPI("terp", "test/mocks/terp")
+testCommon.reloadAPI("orientation", "test/mocks/orientation")
+testCommon.reloadAPI("location", "location")
+testCommon.reloadAPI("matrix", "matrix")
 
 function _testCreateHelper(arg)
     local target = location.create(arg)
