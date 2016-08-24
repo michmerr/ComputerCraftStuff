@@ -1,10 +1,13 @@
 --region *.lua
-print("o = "..tostring(orientation))
+
 --Mock terp
 
 if require then
-    require("mockTerp")
+    terp = require("mockTerp")
 else
+    if terp then
+        os.unloadAPI("terp")
+    end
     os.loadAPI("test/terp")
 end
 
@@ -24,7 +27,14 @@ else
     end
 end
 
-if not location then
+if location then
+    if require then
+        require("location")
+    else
+        os.unloadAPI("location")
+        os.loadAPI("location")
+    end
+else
     if require then
         require("location")
     else
@@ -32,7 +42,14 @@ if not location then
     end
 end
 
-if not matrix then
+if matrix then
+    if require then
+        require("matrix")
+    else
+        os.unloadAPI("matrix")
+        os.loadAPI("matrix")
+    end
+else
     if require then
         require("matrix")
     else
@@ -40,177 +57,127 @@ if not matrix then
     end
 end
 
-function testCreateHelper(arg)
-    print("ox = "..tostring(orientation))
+function _testCreateHelper(arg)
     local target = location.create(arg)
-    if not target then
-        return false, "nil location returned from create()"
-    end
+    assert(target, "nil location returned from create()")
 
-    if not target.expected.orientationCreateCalled then
-        return false, "orientation.create() not called"
-    end
+    assert(target.expected.orientationCreateCalled, "orientation.create() not called")
 
     if arg then
         if arg.attitude then
             local att = matrix.new(arg.attitude)
-            if target.attitude ~= att then
-                return false, string.format("expected specified initial orientation [ %s ], actual [ %s ]", att, target.attitude)
-            end
+            assert(target.attitude == att, string.format("expected specified initial orientation [ %s ], actual [ %s ]", tostring(att), tostring(target.attitude)))
         end
         if arg.x or arg.y or arg.z then
             local actual = target.getLocation()
 
-            if arg.x and arg.x ~= actual.x then
-                return false, string.format("Expected initial x location %d, actual %d",arg.x, actual.x)
-            end
-            if arg.y and arg.y ~= actual.y then
-                return false, string.format("Expected initial y location %d, actual %d",arg.y, actual.y)
-            end
-            if arg.z and arg.z ~= actual.z then
-                return false, string.format("Expected initial z location %d, actual %d",arg.z, actual.z)
-            end
+            assert(arg.x and arg.x == actual.x, string.format("Expected initial x location %d, actual %d",arg.x, actual.x))
+            assert(arg.y and arg.y == actual.y, string.format("Expected initial y location %d, actual %d",arg.y, actual.y))
+            assert(arg.z and arg.z == actual.z, string.format("Expected initial z location %d, actual %d",arg.z, actual.z))
         end
     end
     return true
 end
 
 function testCreate()
-    return testCreateHelper()
+    _testCreateHelper()
 end
 
 function testCreateWithOrientation()
-    return testCreateHelper({ attitude = { { 0; 0; 1 }; { -1, 0, 0 }; { 0; 1; 0 } } })
+    _testCreateHelper({ attitude = { { 0; 0; 1 }; { -1, 0, 0 }; { 0; 1; 0 } } })
 end
 
 function testCreateWithLocation()
-    return testCreateHelper({ x = 5; y = 12; z = 1 })
+    _testCreateHelper({ x = 5; y = 12; z = 1 })
 end
 
 function testCreateBoth()
-    return testCreateHelper({ x = 5; y = 12; z = 1 ; attitude = { { 0; 0; 1 }; { -1, 0, 0 }; { 0; 1; 0 } } })
+    _testCreateHelper({ x = 5; y = 12; z = 1 ; attitude = { { 0; 0; 1 }; { -1, 0, 0 }; { 0; 1; 0 } } })
 end
 
-function testHelper(func, expected)
+function _testHelper(func, expected)
     local target = location.create()
-    target.expected[expected] = { 0; 0; 0 }
-    local x, y, z = target[func]()
-    if not x == 0 then
-        return false, "Did not see expected call to"..expected
-    end
+    target.expected[expected] = { 2; 0; 0 }
+    local loc = target[func]()
+    assert(loc and loc.x == 2, "Did not see expected call to"..expected)
     return true
 end
 
 function testMoveForward()
-    return testHelper("moveForward", "translateForward")
+    _testHelper("moveForward", "translateForward")
 end
 
 function testMoveBack()
-    return testHelper("moveForward", "translateForward")
+    _testHelper("moveBack", "translateBackward")
 end
 
 function testMoveUp()
-    return testHelper("moveForward", "translateForward")
+    _testHelper("moveUp", "translateUp")
 end
 
 function testMoveDown()
-    return testHelper("moveForward", "translateForward")
+    _testHelper("moveDown", "translateDown")
 end
 
 function testMoveLeft()
-    return testHelper("moveForward", "translateForward")
+    _testHelper("moveLeft", "translateLeft")
 end
 
 function testMoveRight()
-    return testHelper("moveForward", "translateForward")
+    _testHelper("moveRight", "translateRight")
 end
 
-function testLocationHelper(target, x, y, z)
+function _testLocationHelper(target, x, y, z)
     local actual = target.getLocation()
-    if not (actual.x == x and actual.y == y and actual.z == z) then
-        return false, string.format("Expected %d, %d, %d; Actual %d, %d, %d", x, y, z, actual.x, actual.y, actual.z)
-    end
+    assert((actual.x == x and actual.y == y and actual.z == z), string.format("Expected %d, %d, %d; Actual %d, %d, %d", x, y, z, actual.x, actual.y, actual.z))
     return true
 end
 
 function testGetLocationInitial()
     local target = location.create()
-    return testLocationHelper(target, 0, 0, 0)
+    _testLocationHelper(target, 0, 0, 0)
 end
 
 function testGetLocationAfterSimpleMove()
     local target = location.create()
     target.expected.translateForward = { 0; 0; 1 }
     target.moveForward()
-    return testLocationHelper(target, 0, 0, 1)
+    _testLocationHelper(target, 0, 0, 1)
 end
 
 -- Distance to coords in right-angle moves
-function testHowFarHelper(x, y, z, x1, y1, z1)
+function _testHowFarHelper(x, y, z, x1, y1, z1)
     local target = location.create(x1 and { x = x1, y = y1, z = z1 })
     local actual = target.howFar(x, y, z)
     local expected = math.abs(x - (x1 or 0)) + math.abs(y - (y1 or 0)) + math.abs(z - (z1 or 0))
 
-    if actual ~= expected then
-        return false, string.format("Expected %d, actual %d", expected, actual)
-    end
+    assert(actual == expected, string.format("Expected %d, actual %d", expected, actual))
     return true
 end
 
 function testHowFar()
-    return testHowFarHelper(0, 0, 0)
+    _testHowFarHelper(0, 0, 0)
 end
 
 function testHowFarPos()
-    return testHowFarHelper(10, 10, 10)
+    _testHowFarHelper(10, 10, 10)
 end
 
 function testHowFarNeg()
-    return testHowFarHelper(-10, -10, -10)
+    _testHowFarHelper(-10, -10, -10)
 end
 
 function testHowFarMixed()
-    return testHowFarHelper(10, -10, 10)
+    _testHowFarHelper(10, -10, 10)
 end
 
 function testHowFarRelative()
-    return testHowFarHelper(0, 0, 0, 16, 4, 9)
+    _testHowFarHelper(0, 0, 0, 16, 4, 9)
 end
 
 function testHowFarRelative2()
-    return testHowFarHelper(10, -9, 0, 16, 4, 9)
+    _testHowFarHelper(10, -9, 0, 16, 4, 9)
 end
 
-function test(id, func)
-    local result, message = func()
-    local resultString = "FAILED"
-    if result then
-        resultString = "PASSED"
-    end
-    if not message then
-        message = ""
-    end
-
-    print(string.format("%s[%s] %s", id, resultString, message))
-end
-
-test("testCreate", testCreate)
-test("testCreateWithOrientation", testCreateWithOrientation)
-test("testCreateWithLocation", testCreateWithLocation)
-test("testCreateBoth", testCreateBoth)
-test("testMoveForward", testMoveForward)
-test("testMoveBack", testMoveBack)
-test("testMoveUp", testMoveUp)
-test("testMoveDown", testMoveDown)
-test("testMoveLeft", testMoveLeft)
-test("testMoveRight", testMoveRight)
-test("testGetLocationInitial", testGetLocationInitial)
-test("testGetLocationAfterSimpleMove", testGetLocationAfterSimpleMove)
-test("testHowFar", testHowFar)
-test("testHowFarPos", testHowFarPos)
-test("testHowFarNeg", testHowFarNeg)
-test("testHowFarMixed", testHowFarMixed)
-test("testHowFarRelative", testHowFarRelative)
-test("testHowFarRelative2", testHowFarRelative2)
 
 --endregion

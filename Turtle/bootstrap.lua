@@ -21,20 +21,20 @@ local files = {
 local args = { ... }
 
 if args[1] and args[1] == "exec" then
-    for file in files do
-        if (fs.exists(file.filename)) then
-            fs.delete(file.filename)
+    for i = 1, #files do
+        if (fs.exists(files[i].filename)) then
+            fs.delete(files[i].filename)
         end
-        shell.run("pastebin", "get", file.id, file.filename)
+        shell.run("pastebin", "get", files[i].id, files[i].filename)
     end
 else
 
-    if (fs.exists("_bootstrap.lua")) then
-        fs.delete("_bootstrap.lua")
+    if (fs.exists("_bootstrap")) then
+        fs.delete("_bootstrap")
     end
 
-    shell.run("pastebin", "get", "FDLJGt19", "_bootstrap.lua")
-    shell.run("_bootstrap.lua", "exec")
+    shell.run("pastebin", "get", "FDLJGt19", "_bootstrap")
+    shell.run("_bootstrap", "exec")
 
 end
 

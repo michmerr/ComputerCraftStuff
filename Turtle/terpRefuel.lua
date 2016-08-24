@@ -52,7 +52,7 @@ function create(useInventory, minFuelForOperation, optimumTopOff, minFuelAfterRe
         while terpInstance.getFuelLevel() < takeFuelUntilLevel do
             fuelLevel = terpInstance.getFuelLevel()
             -- wait for manual refuel
-            if (utilities.waitForEvent("turtle_inventory", 5)) then
+            if (utilities.waitForEvent(5, { "turtle_inventory" } )) then
                 refuelFromInventory(terpInstance, takeFuelUntilLevel)
             end
             os.sleep(3)

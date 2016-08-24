@@ -1,0 +1,55 @@
+﻿Aer
+Aqua
+Ignis
+Ordo
+Perditio
+Terra
+Gelum, Ignis, Perditio
+Lux, Aer, Ignis
+Motus, Aer, Ordo
+Permutatio, Ordo, Perditio
+Potentia, Ignis, Ordo
+Tempestas, Aer, Aqua
+Vacuos, Aer, Perditio
+Venenum, Aqua, Perditio
+Victus, Aqua, Terra
+Vitreus, Ordo, Terra
+Bestia, Motus, Victus
+Fames, Vacuos, Victus
+Herba, Terra, Victus
+Iter, Motus, Terra
+Limus, Aqua, Victus
+Metallum, Terra, Vitreus
+Mortuus, Perditio, Victus
+Praecantatio, Potentia, Vacuos
+Sano, Ordo, Victus
+Tenabrae, Lux, Vacuos
+Vinculum, Motus, Perditio
+Volatus, Aer, Motus
+Alienis, Tenabrae, Vacuos
+Arbor, Aer, Herba
+Auram, Aer, Praecantatio
+Corpus, Bestia, Mortuus
+Exanimis, Mortuus, Motus
+Spiritus, Mortuus, Victus
+Vitium, Perditio, Praecantatio
+Cognitio, Ignis, Spiritus
+Sensus, Aer, Spiritus
+Humanus, Bestia, Cognitio
+Instrumentum, Humanus, Ordo
+Lucrum, Fames, Humanus
+Messis, Herba, Humanus
+Perfodio, Humanus, Terra
+Fabrico, Humanus, Instrumentum
+Machina, Instrumentum, Motus
+Meto, Instrumentum, Messis
+Pannus, Bestia, Instrumentum
+Telum, Instrumentum, Ignis
+Tutamen, Instrumentum, Terra
+Gula, Fames, Vacuos
+Infernus, Ignis, Praecantatio
+Superbia, Vacuos, Volatus
+Desidia, Spiritus, Vinculum
+Luxuria, Corpus, Fames
+Invidia, Fames, Sensus
+Ira, Ignis, Telum

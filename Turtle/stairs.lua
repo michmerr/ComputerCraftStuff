@@ -176,7 +176,8 @@ end
 
 function simpleStepTraversal(turn, width, depth, stairsUp, action)
     for j =1, depth do
-        for i = 1, width do
+        action(1, turn, stairsUp)
+        for i = 2, width do
             -- Our first move is forward into the current depth,
             -- so the first thing we need to do before the second
             -- width is turn to face down that axis. If the width is
@@ -188,10 +189,10 @@ function simpleStepTraversal(turn, width, depth, stairsUp, action)
             end
             forward()
             action(i, turn, stairsUp)
-        end
-        -- turn back to face forward after a > 1 width traversal
-        if width > 1 then
-            turn()
+            -- turn back to face forward after a > 1 width traversal
+            if i == width then
+                turn()
+            end
         end
     end
     return turn
@@ -257,16 +258,16 @@ function simpleStep(turn, startTurn, width, depth, stairsUp, intervalActions, co
         up()
     end
 
+    forward()
+
     -- clear the airspace
     turn = simpleStepTraversal(turn, width, depth, stairsUp, clearAirspace)
 
     -- land on desired step
     down()
     -- back up to edge of previous step
-    if depth > 1 then
-      for i = 2, depth do
-        turtle.back()
-      end
+    for i = 2, depth do
+    turtle.back()
     end
 
     -- laydown the tread

@@ -35,6 +35,7 @@
     <Compile Include="inventoryTest.lua" />
     <Compile Include="itemType.lua" />
     <Compile Include="itemTypeCollection.lua" />
+    <Compile Include="itemTypeData.lua" />
     <Compile Include="location.lua" />
     <Compile Include="locationTest.lua" />
     <Compile Include="matrix.lua" />
@@ -44,6 +45,7 @@
     <Compile Include="orientationTest.lua" />
     <Compile Include="os.lua" />
     <Compile Include="peripheral.lua" />
+    <Compile Include="recipe.lua" />
     <Compile Include="redstone.lua" />
     <Compile Include="rs.lua" />
     <Compile Include="stairs.lua" />
@@ -53,6 +55,8 @@
     <Compile Include="terpCommandsTest.lua" />
     <Compile Include="terpRefuelTest.lua" />
     <Compile Include="terpTest.lua" />
+    <Compile Include="test.lua" />
+    <Compile Include="Transfer.lua" />
     <Compile Include="turtle.lua" />
     <Compile Include="terpRefuel.lua" />
     <Compile Include="utilities.lua" />

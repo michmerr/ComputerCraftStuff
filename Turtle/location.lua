@@ -6,6 +6,7 @@ if not orientation then
 end
 
 function create(state)
+
     local self = orientation.create(state and state.attitude)
 
     local x = state and state.x or 0
@@ -16,30 +17,31 @@ function create(state)
         x = x + dx
         y = y + dy
         z = z + dz
+        return self.getLocation()
     end
 
     function self.moveForward()
-        move(self.translateForward())
+        return move(self.translateForward())
     end
 
     function self.moveBack()
-        move(self.translateBackward())
+        return move(self.translateBackward())
     end
 
     function self.moveUp()
-        move(self.translateUp())
+       return  move(self.translateUp())
     end
 
     function self.moveDown()
-        move(self.translateDown())
+       return  move(self.translateDown())
     end
 
     function self.moveLeft()
-        move(self.translateLeft())
+        return move(self.translateLeft())
     end
 
     function self.moveRight()
-        move(self.translateRight())
+        return move(self.translateRight())
     end
 
     function self.getLocation()
@@ -68,15 +70,15 @@ function decorate(targetTerp)
         result["after_turn"..direction] = _location["turn"..direction]
     end
 
-    result.getlocation = _getlocation
-    result.howFar = _howFar
+    result.getlocation = _location.getlocation
+    result.howFar = _location.howFar
 
     function turnTo(x, z)
         if math.abs(x) == math.abs(y) then
             error("90 degree directions only. One value must be 0, and the other must be positive or negative to indicate the facing along that axis.")
         end
 
-        local facing = _translateForward()
+        local facing = _location.translateForward()
 
         if (z < 0) then
             if facing[1] > 0 then
@@ -118,7 +120,7 @@ function decorate(targetTerp)
     end
 
     function result.moveTo(x, y, z)
-        local start = _getlocation()
+        local start = _location.getlocation()
 
         dX = x - start.x
         dY = y - start.y

@@ -12,12 +12,12 @@ if not utilities then
     if require then
         require("utilities")
     else
-        os.loadAPI("utilities")
+        dofile("utilities")
     end
 end
 
-utiltities.require("itemType")
-utiltities.require("itemTypeCollection")
+utilities.require("itemType")
+utilities.require("itemTypeCollection")
 
 local configFile
 local args = { ... }
@@ -26,43 +26,18 @@ if #args > 0 then
     configFile = args[1]
 end
 
-local itemlist = itemTypeCollection.new( {
-    "minecraft:coal:0";
-    "minecraft:cobblestone:0";
-    "ExtraUtilities:cobblestone_compressed:0";  -- Compressed cobblestone
-    "ExtraUtilities:cobblestone_compressed:1";  -- Double cobble
-    "ExtraUtilities:cobblestone_compressed:2";  -- Triple cobble
-    "ExtraUtilities:cobblestone_compressed:3";  -- Quad cobble
-    "minecraft:dirt:0";
-    "ExtraUtilities:cobblestone_compressed:8";  -- Compressed dirt
-    "ExtraUtilities:cobblestone_compressed:9";  -- Double dirt
-    "ExtraUtilities:cobblestone_compressed:10";  -- Triple dirt
-    "ExtraUtilities:cobblestone_compressed:11";  -- Quad dirt
-    "minecraft:gravel:0";
-    "ExtraUtilities:cobblestone_compressed:12";  -- Compressed Gravel
-    "minecraft:sand:0";
-    "ExtraUtilities:cobblestone_compressed:14";  -- Compressed sand
-    "ExtraUtilities:cobblestone_compressed:15";  -- Double sand
-    "minecraft:redstone:0";
-    "ProjRed|Core:projectred.core.part:37";  -- Ruby
-    "ProjRed|Core:projectred.core.part:38";  -- Sapphire
-    "ProjRed|Core:projectred.core.part:0";  -- Peridot
-    "ProjRed|Core:projectred.core.part:56"; -- Electrotine
-    "Forestry:apatite:0";
-    "Thaumcraft:ItemResource:6"; -- Amber
-} )
+
 
 local config = {
     ["craftingSlots"] = { 1; 2; 3; 5; 6; 7; 9; 10; 11 };
     ["outputSlot"] = 16;
-    ["tempSlots"] = { 4; 8; 12; 13; 14; 15 };
-    -- direction to drop non-matching items
-    ["outDirection"] = "right";
-    -- item names to drop down when filtering
-    -- config.dropNames = nil
-    -- item names to push to the non-default side
-    -- config.sideNames = nil
-    ["compact"] =  itemlist;
+    -- Filters to send items down/left/right.
+    -- These can be any table with a "contains" function to match metadata from turtle.getItemDetail()
+    ["downNames"] = nil;
+    ["leftNames"] = nil;
+    ["rightNames"] = { contains = function(item) return true end };
+    -- instance of itemTypeCollection listing the types that can be compacted, and how.
+    ["compact"] =  itemTypeCollection.load("itemTypeData");
     ["interval"] = 30;
 }
 
@@ -109,16 +84,26 @@ function init()
     end
 end
 
+function okToPush(inspectFunc)
+    local success, data = inspectFunc()
+    return success and data.name == "minecraft:chest"
+end
+
 function push(turn, turnBack, indices)
     if not indices or type(indices) ~= "table" then
         return false
     end
 
     turn()
-    local result = true
-    for i = 1, #indices do
-        turtle.select(indices[i])
-        result = pushTo() and result
+    local result = false
+    if okToPush(turtle.inspect) then
+        for i = 1, #indices do
+            turtle.select(indices[i])
+            result = pushTo()
+            if not result then
+                break
+            end
+        end
     end
     turnBack()
     return result
@@ -130,28 +115,6 @@ function flush()
         pushTo()
     end
     slotCache = { }
-end
-
-function areSameType(a, b)
-    if not a and not b then
-        return true
-    end
-
-    if not a or not b then
-        return false
-    end
-
---    print("Comparing:")
---    printMetadata(a)
---    print ("To:")
---    printMetadata(b)
---    print()
-
-    if a.name ~= b.name then
-        return false
-    end
-
-    return a.damage == b.damage
 end
 
 function printMetadata(metadata)
@@ -223,15 +186,137 @@ function filter()
 end
 
 function getSameItem(pullFunc, pushFunc, item)
-    local result = nil
+    local result, err
     while pullFunc() do
         result = turtle.getItemDetail()
-        if areSameType(result, item) then
-            return result
+        if item.equals(result) then
+            break
         end
-        pushFunc()
+        if not pushFunc() then
+            err = "Push failed"
+            break
+        end
+    end
+    return err, result
+end
+
+function pushFilteredItem(pushFunc, fallbackPushFuncs, turnFunc)
+
+    local err
+
+    if turnFunc then
+        turnFunc()
+    end
+
+    if okToPush(turtle.inspect) and not pushFunc() then
+        err = "Push failed"
+    end
+
+    if turnFunc then
+        if turnFunc == turtle.turnRight then
+            turtle.turnLeft()
+        else
+            turtle.turnRight()
+        end
+    end
+
+    if not err then
+        return nil, true
+    end
+
+    if fallbackPushFuncs then
+        if type(fallbackPushFuncs) == "function" then
+            if fallbackPushFuncs() then
+                return err, true
+            end
+            err = err.."...could not push to alternate location."
+        else
+            for i=1, #fallbackPushFuncs do
+                if fallbackPushFuncs[i]() then
+                    return err, true
+                end
+                err = err.."...could not push to alternate location #"..tostring(i)
+            end
+        end
+    end
+    return err, false
+end
+
+function functionApplyFilter(item, filter, pushFunc, fallbackPushFuncs, turnFunc)
+    local err, result
+
+    if filter and filter.contains(item) then
+        err, result = pushFilteredItem(pushFunc, fallbackPushFuncs, turnFunc)
+        if err then
+            print(err)
+            if result then
+                err = nil
+            end
+        end
+    end
+
+    return err, result
+end
+
+
+function filterSelectedItem(metadata)
+    if not metadata then
+        return nil
+    end
+
+    local item = itemType.fromItemDetail(metadata)
+    if config.compact.contains(item) then
+        return nil, item
+    end
+
+    local err, result = functionApplyFilter(item, config.dropNames, turtle.dropDown, { pushTo, pushBack })
+    if err then
+        return err
+    end
+    if result then
+        return nil
+    end
+
+    err, result = functionApplyFilter(item, config.rightNames, turtle.drop, { pushTo, pushBack }, turtle.turnRight)
+    if err then
+        return err
+    end
+    if result then
+        return nil
+    end
+
+    err, result = functionApplyFilter(item, config.leftNames, turtle.drop, { pushTo, pushBack }, turtle.turnLeft)
+    if err then
+        return err
     end
     return nil
+end
+
+function findCompactableStack(minimum)
+    local err, matchingType
+    local metadata
+
+    repeat
+        if not pullFrom() then
+            sleep(1) -- allow for possible race condition
+            if not pullFrom() then
+                break
+            end
+        end
+        metadata = turtle.getItemDetail()
+        err, matchingType = filterSelectedItem(metadata)
+        if err then
+            return err
+        end
+        if matchingType and minimum and metadata.count < minimum then
+            if not pushTo() then
+                return "output full"
+            end
+            matchingType = nil
+        end
+    until matchingType
+
+    return err, metadata, matchingType
 end
 
 function fillCraftingTable()
@@ -239,114 +324,43 @@ function fillCraftingTable()
     print ("Filling the crafting table")
 
     local result = { }
-    local matchingType
-    local metadata
-    local queuedItems = true
+    local foundType
+    turtle.select(config.craftingSlots[1])
 
-    repeat
-        turtle.select(1)
-        repeat until not pullFrom()
-
-        for i = 1, 16 do
-            if i > 1 then
-                turtle.select(i)
-            end
-
-            metadata = turtle.getItemDetail()
-            if not metadata then
-                print("No metadata returned for slot "..i)
-                queuedItems = false
-                break
-            end
-            metadata.space = turtle.getItemSpace()
-
-            -- Reject unfiltered items that have been added to the queue and stacks that are too
-            -- small to compact if we're still looking for the first stack.
-            if config.compact.contains(metadata) and (matchingType or metadata.count > 8)  then
-                if matchingType then
-                    -- If we have our stack return other types to the queue. Do the same if we have matching stacks, already.
-                    if #result == 9 then
-                      --  print("Pushing back item because the table is full")
-                        pushBack()
-                    elseif areSameType(matchingType, metadata) then
-                     --   print("Found additional item in slot "..i)
-                        metadata.foundIndex = i
-                        table.insert(result, metadata)
-                    else
-                       -- print("Pushing through non-matching item from slot "..i)
-                        pushTo()
-                    end
-                else
-                    -- Found viable stack. Start counting.
-                    matchingType = metadata
-                    metadata.foundIndex = i
-                    print("Will craft using items of the type in slot "..i)
-                    table.insert(result, metadata)
-                end
-            else
-                -- print("Pushing through a non-compacting item, or one that has too few items to compact")
-                pushTo()
-            end
-        end
-    until #result > 0 or not queuedItems
-
-    if #result == 0 then
+    local err, metadata, matchingType = findCompactableStack(9)
+    if err then
+        return err
+    end
+    if not matchingType then
         return nil
     end
 
-    if #result < 9 and queuedItems then
-        for i = 1, #result do
-            if result[i].foundIndex ~= i then
-                turtle.select(result[i].foundIndex)
-                turtle.transferTo(i)
-                result[i].foundIndex = i
-            end
-        end
-        turtle.select(#result + 1)
-        while #result < 9 do
-            if not pullFrom() then
-                queuedItems = false
-                break
-            end
-            metadata = turtle.getItemDetail()
-            if areSameType(matchingType, metadata) then
-                metadata.foundIndex = #result + 1
-                table.insert(result, metadata)
-                turtle.select(#result + 1)
-            else
-                pushTo()
-            end
-        end
-    end
+    metadata.space = turtle.getItemSpace()
+    table.insert(result, metadata)
 
-    for i = 1, #result do
-        local currentIndex = result[i].foundIndex
-        if not table.contains(config.craftingSlots, currentIndex) then
-            local freeSlot
-            for j = 1, #config.craftingSlots do
-                local taken = false
-                for k = 1, #result do
-                    if result[k].foundIndex == config.craftingSlots[j] then
-                        taken = true
-                        break
-                    end
-                end
-                if not taken then
-                    freeSlot = config.craftingSlots[j]
-                    break
+    for i = 2, #config.craftingSlots do
+        turtle.select(config.craftingSlots[i])
+        err, metadata, foundType = findCompactableStack()
+        if err then
+            return err
+        end
+        if not foundType then
+            return nil, result
+        end
+        if foundType ~= matchingType then
+            if not pushBack() then
+                if not pushTo() then
+                    return "output full"
                 end
             end
-
-            if not freeSlot then
-                error("Error moving stacks to crafting grid.")
-            end
-            turtle.select(currentIndex)
-            turtle.transferTo(freeSlot)
-            result[i].foundIndex = freeSlot
+            return nil, result
         end
+
+        metadata.space = turtle.getItemSpace()
+        table.insert(result, metadata)
     end
 
-    return result
+    return nil, result
 end
 
 function totalCount(metadata)
@@ -401,8 +415,6 @@ function crossLevel(metadata, indexA, indexB, level)
 
     turtle.select(fromSlot)
 
---    print("transfer to:"..toSlot.." from:"..fromSlot.." need: "..need.." level: "..level)
---    utilities.waitForEvent("key", 10, 32)
     transfer(toSlot, from, to, need, level)
 end
 
@@ -419,31 +431,19 @@ function levelValues(metadata)
         return false
     end
 
+    local maxStack = metadata[1].space + metadata[1].count
     -- The grid is already full
-    if metadata[1] and metadata[1].space and (total == (metadata[1].count + metadata[1].space) * 9) then
+    if total == (maxStack * 9) then
         return true
     end
 
-    local tMetadata = { }
     -- Initialize metadata for empty slots
-    for i = 1, #config.craftingSlots do
-        local found = false
-        for j = 1, #metadata do
-            if metadata[j].foundIndex == config.craftingSlots[i] then
-                table.insert(tMetadata, metadata[j])
-                found = true
-                break
-            end
-        end
-        if not found then
-            local blank = { }
-            blank.count = 0
-            blank.foundIndex = config.craftingSlots[i]
-            table.insert(tMetadata, blank)
-        end
+    for i = #metadata + 1, #config.craftingSlots do
+        local blank = { }
+        blank.count = 0
+        blank.space = maxStack
+        table.insert(metadata, blank)
     end
-
-    metadata = tMetadata
 
     local split = math.floor(total / 9)
     print(string.format("Average = %d", split))
@@ -468,45 +468,63 @@ function compact()
 
     local result = false
     repeat
-        local slotsFilled = fillCraftingTable()
-        if not slotsFilled then
-            break
+        local err, slotsFilled = fillCraftingTable()
+        if err then
+            return err
         end
-        -- get a count before empty metadata is added for empty slots
-        slotsFilledCount = #slotsFilled
+        if slotsFilled and #slotsFilled > 0 then
 
-        if levelValues(slotsFilled) then
-            turtle.select(config.outputSlot)
-            print("crafting...")
-            if turtle.craft() then
-                print("success!")
-                result = true
-                pushTo()
+            if levelValues(slotsFilled) then
+                turtle.select(config.outputSlot)
+                print("crafting...")
+                if turtle.craft() then
+                    print("success!")
+                    result = true
+                    if not pushTo() then
+                        print("problem pushing output forward, will push back instead")
+                        if not pushBack() then
+                            return "bins full"
+                        end
+                    end
+                end
+            end
+
+            for i = 1, #config.craftingSlots do
+                if turtle.getItemCount(config.craftingSlots[i]) > 0 then
+                    turtle.select(config.craftingSlots[i])
+                    if not pushTo() then
+                        print("problem pushing remainder forward, will push back instead")
+                        if not pushBack() then
+                            return "bins full"
+                        end
+                    end
+                end
             end
         end
-
-        for i = 1, #config.craftingSlots do
-            turtle.select(config.craftingSlots[i])
-            pushTo()
-        end
-    -- When the slots are not full, the table filler will have tested and passed through
-    -- all remaining items in the current bin looking for matches, so the pass is complete.
-    until slotsFilledCount < 9
-    return result
+    until not slotsFilled or #slotsFilled == 0
+    return nil, result
 end
 
 init()
-while not done do
-    filter()
+repeat
+    -- filter()
+    local err, result, waitResult
 
     -- Run stacks back and forth between the two bins until no compact operations take place.
     repeat
         toggleInputOutputBins()
-    until not compact()
+        err, result = compact()
+    until not result
 
+    if err then
+        print("ERROR: "..err)
+        break
+    end
     print(string.format("Waiting %d seconds before next cycle... ([space] to break)", config.interval))
-    done = utilities.waitForEvent("key", config.interval, 57)
-end
+
+    waitResult = utilities.waitForEvent(config.interval, { "key" })
+
+until waitResult and waitResult[2] == 57
 
 
 --endregion
