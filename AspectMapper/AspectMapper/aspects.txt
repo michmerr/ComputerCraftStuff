@@ -23,10 +23,10 @@ Metallum, Terra, Vitreus
 Mortuus, Perditio, Victus
 Praecantatio, Potentia, Vacuos
 Sano, Ordo, Victus
-Tenabrae, Lux, Vacuos
+Tenebrae, Lux, Vacuos
 Vinculum, Motus, Perditio
 Volatus, Aer, Motus
-Alienis, Tenabrae, Vacuos
+Alienis, Tenebrae, Vacuos
 Arbor, Aer, Herba
 Auram, Aer, Praecantatio
 Corpus, Bestia, Mortuus

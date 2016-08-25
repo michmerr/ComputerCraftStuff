@@ -97,8 +97,8 @@ local function forward()
 end
 
 -- -1 out of materials, 0 place failed, 1 place succeeded, 2 block already occupied
-local function place(placeFunc, detectFunc, attackFunc)
-    if not selectMaterialSlot(2, 14) then
+local function place(placeFunc, detectFunc, attackFunc, slotLow, slotHigh, materialType)
+    if not selectMaterialSlot(slotLow, slotHigh, materialType) then
         return -1
     end
 
@@ -120,16 +120,16 @@ local function place(placeFunc, detectFunc, attackFunc)
     return 1
 end
 
-local function placeUp()
-    return place(turtle.placeUp, turtle.detectUp, turtle.attackUp)
+local function placeUp(slotLow, slotHig, materialType)
+    return place(turtle.placeUp, turtle.detectUp, turtle.attackUp, slotLow, slotHig, materialType)
 end
 
-local function placeDown()
-    return place(turtle.placeDown, turtle.detectDown, turtle.attackDown)
+local function placeDown(slotLow, slotHig, materialType)
+    return place(turtle.placeDown, turtle.detectDown, turtle.attackDown, slotLow, slotHig, materialType)
 end
 
-local function placeForward()
-    return place(turtle.place, turtle.detect, turtle.attack)
+local function placeForward(slotLow, slotHig, materialType)
+    return place(turtle.place, turtle.detect, turtle.attack, slotLow, slotHig, materialType)
 end
 
 local function turnRight()
@@ -174,43 +174,40 @@ function resupply()
     print("Go time!")
 end
 
-function simpleStepTraversal(turn, width, depth, stairsUp, action)
+function simpleStepTraversal(turn, above, width, depth, stairsUp, action)
     for j =1, depth do
-        action(1, turn, stairsUp)
-        for i = 2, width do
-            -- Our first move is forward into the current depth,
-            -- so the first thing we need to do before the second
-            -- width is turn to face down that axis. If the width is
-            -- only one, we save the time it takes to turn and turn
-            -- back.
-            if i == 2 then
-                turn()
-                turn = changeDirection(turn)
-            end
-            forward()
-            action(i, turn, stairsUp)
-            -- turn back to face forward after a > 1 width traversal
-            if i == width then
-                turn()
+        action(1, turn, above, stairsUp)
+        -- save the cost of turning for when stairs are wider than one block
+        if (width > 1) then
+            turn()
+            turn = changeDirection(turn)
+            for i = 2, width do
+                forward()
+                action(i, turn, above, stairsUp)
+                -- turn back to face forward after a > 1 width traversal
+                if i == width then
+                    turn()
+                end
             end
         end
+
     end
     return turn
 end
 
 -- returns 0 for failure, 1 for success, 2 if stair was already there
-function layTread(iteration, turn, stairsUp)
-    local pr = placeDown()
+function layTread(iteration, turn, above, stairsUp)
+    local pr = placeDown(2, 14)
     if pr < 0 then
         resupply()
-        pr = placeDown()
+        pr = placeDown(2, 14)
     end
     -- this *should* only be possible on the first placement, since subsequent blocks will attach the the first
     if pr == 0 then
         down()
         if stairsUp then
             -- this should always work since it would extend the previous step
-            pr = placeDown()
+            pr = placeDown(2, 14)
         else
             turn()
             -- on the first iteration, we are facing away from the previous step
@@ -218,7 +215,7 @@ function layTread(iteration, turn, stairsUp)
                 turn()
             end
             -- this should always work since it would attach to the bottom of the previous step
-            pr = placeForward()
+            pr = placeForward(2, 14)
             if (iteration == 1) then
                 turn()
                 turn()
@@ -230,10 +227,10 @@ function layTread(iteration, turn, stairsUp)
             print(string.format("error anchoring to previous step at %d, %d, %d (relative)", x, y, z))
         end
         up()
-        pr = placeDown()
+        pr = placeDown(2, 14)
         if pr < 0 then
             resupply()
-            pr = placeDown()
+            pr = placeDown(2, 14)
         end
         if (pr < 1) then
             print(string.format("error placing step at %d, %d, %d (relative)", x, y, z))
@@ -242,48 +239,63 @@ function layTread(iteration, turn, stairsUp)
     return pr
 end
 
-function clearAirspace(iteration, turn, stairsUp)
+function clearAirspace(iteration, turn, above, stairsUp)
     digDown()
     digUp()
 end
 
-function simpleStep(turn, startTurn, width, depth, stairsUp, intervalActions, count)
+function runIntervalActions(intervalActions, count, currentTurn, startTurn, above, facingWall)
+    if intervalActions then
+        for action in intervalActions do
+            action(count, currentTurn, startTurn, above, facingWall)
+        end
+    end
+end
+
+function simpleStep(turn, above, startTurn, width, depth, stairsUp, intervalActions, count)
 
     if not count then
         count = 0
     end
 
-    if (stairsUp) then
-        up()
+    count = count + 1
+
+    local firstPass, secondPass
+
+    if stairsUp then
         up()
     end
 
     forward()
 
-    -- clear the airspace
-    turn = simpleStepTraversal(turn, width, depth, stairsUp, clearAirspace)
-
-    -- land on desired step
-    down()
-    -- back up to edge of previous step
-    for i = 2, depth do
-    turtle.back()
+    if not stairsUp then
+        down()
     end
 
-    -- laydown the tread
-    turn = simpleStepTraversal(turn, width, depth, stairsUp, layTread)
+    runIntervalActions(intervalActions, count, turn, above, startTurn, above, false)
 
-    count = count + 1
-    if intervalActions then
-        for action in intervalActions do
-            action(count, turn, startTurn)
-        end
+    if above then
+        turn = simpleStepTraversal(turn, above, width, depth, stairsUp, clearAirspace, false)
+        runIntervalActions(intervalActions, count, turn, above, startTurn, true, false)
+        down()
+        down()
+        runIntervalActions(intervalActions, count, turn, above, startTurn, false, false)
+        turn = simpleStepTraversal(turn, above, width, depth, stairsUp, layTread, true)
+    else
+        turn = simpleStepTraversal(turn, above, width, depth, stairsUp, layTread, false)
+        runIntervalActions(intervalActions, count, turn, above, startTurn, false, false)
+        up()
+        up()
+        runIntervalActions(intervalActions, count, turn, above, startTurn, true, false)
+        turn = simpleStepTraversal(turn, above, width, depth, stairsUp, clearAirspace, true)
     end
 
-    return turn, count
+    runIntervalActions(intervalActions, count, turn, above, startTurn, not above, false)
+
+    return turn, above, not above, count
 end
 
-function simpleFlight(turn, startTurn, length, width, depth, stairsUp, intervalActions, count)
+function simpleFlight(turn, above, startTurn, length, width, depth, stairsUp, intervalActions, count)
     -- Assumes a start position facing the direction to create the flight
     -- of stairs, immediately in front of the first step, and next to the anchor
     -- wall. Initial turn should be away from the anchoring wall. This will be
@@ -298,17 +310,17 @@ function simpleFlight(turn, startTurn, length, width, depth, stairsUp, intervalA
             -- assume that a landing or other continuation makes a shallow final step ok.
             useDepth = remainderDepth
         end
-        turn, count = simpleStep(turn, startTurn, width, useDepth, stairsUp, intervalActions, count)
+        turn, above, count = simpleStep(turn, above, startTurn, width, useDepth, stairsUp, intervalActions, count)
     end
 
-    return turn, count
+    return turn, above, count
 end
 
-function turnCorner(turn, initialTurn, centerAnchor)
+function turnCorner(turn, initialTurn, centerAnchor, treadWidth)
     if centerAnchor then
         changeDirection(initialTurn())()
         if initialTurn ~= turn then
-            for j = 1, treadWidth do
+            for j = 2, treadWidth do
                 forward()
             end
         else
@@ -317,7 +329,7 @@ function turnCorner(turn, initialTurn, centerAnchor)
     else
         initialTurn()
         if initialTurn == turn then
-            for j = 1, treadWidth do
+            for j = 2, treadWidth do
                 forward()
             end
         else
@@ -327,40 +339,39 @@ function turnCorner(turn, initialTurn, centerAnchor)
     return turn
 end
 
-function simpleSpiralSide(turn, initialTurn, count, limit, flightLength, treadWidth, treadDepth, stairsUp, intervalActions)
+function simpleSpiralSide(turn, above, initialTurn, count, limit, flightLength, treadWidth, treadDepth, stairsUp, intervalActions)
    local steps = math.ceil(flightLength / treadDepth)
 
     --stairs
     if steps < limit - count then
-        turn, count = simpleFlight(turn, initialTurn, flightLength, treadWidth, treadDepth, stairsUp, intervalActions, count)
+        turn, above, count = simpleFlight(turn, above, initialTurn, flightLength, treadWidth, treadDepth, stairsUp, intervalActions, count)
 
         if count < limit then
             --landing
-            turn, count = simpleStep(turn, initialTurn, treadWidth, treadWidth, height > 1, intervalActions, count)
-            turn = turnCorner(turn, initialTurn, centerAnchor)
+            turn, above, count = simpleStep(turn, above, initialTurn, treadWidth, treadWidth, stairsUp, intervalActions, count)
+            turn = turnCorner(turn, initialTurn, centerAnchor, treadWidth)
         end
     else
-        turn, count = simpleFlight(turn, initialTurn, (limit - count) * treadDepth, treadWidth, treadDepth, stairsUp, intervalActions, count)
+        turn, above, count = simpleFlight(turn, above, initialTurn, (limit - count) * treadDepth, treadWidth, treadDepth, stairsUp, intervalActions, count)
     end
 
-    return turn, count
+    return turn, above, count
 end
 
 -- Starting in front of the first step, immediately adjacent to the anchor wall.
 -- Positive height value for stairs up, negative for down.
--- Table of interval actions that will be called as functions with the step count, current turn, and initial turn after each step.
+-- Table of interval actions that will be called as functions with the step count, current turn, above, and initial turn after each step.
 function simpleSpiralStairs(height, clockwise, centerAnchor, anchorWallLength, anchorWallWidth, treadDepth, treadWidth, intervalActions)
     local flightLengthZ = anchorWallLength
     local flightLengthX = anchorWallWidth
     local count = 0
     local totalCount = math.abs(height)
-
     if not centerAnchor then
         flightLengthZ = flightLengthZ - (2 * treadWidth)
         flightLengthX = flightLengthX - (2 * treadWidth)
     end
 
-    local turn, initialTurn
+    local turn, above, initialTurn
     if (clockwise and centerAnchor) or (not clockwise and not centerAnchor) then
         turn = turnLeft
     else
@@ -371,33 +382,80 @@ function simpleSpiralStairs(height, clockwise, centerAnchor, anchorWallLength, a
     if not centerAnchor then
         -- flush landing
         up()
-        turn, count = simpleStep(turn, initialTurn, treadWidth, treadWidth, false, intervalActions, count)
+        turn, above, count = simpleStep(turn, above, initialTurn, treadWidth, treadWidth, false, intervalActions, count)
     end
 
     while count < totalCount do
-        turn, count = simpleSpiralSide(turn, initialTurn, count, totalCount, flightLengthZ, treadWidth, treadDepth, height > 0, intervalActions)
+        turn, above, count = simpleSpiralSide(turn, above, initialTurn, count, totalCount, flightLengthZ, treadWidth, treadDepth, height > 0, intervalActions)
         if count == totalCount then
             break
         end
 
-        turn, count = simpleSpiralSide(turn, initialTurn, count, totalCount, flightLengthX, treadWidth, treadDepth, height > 0, intervalActions)
+        turn, above, count = simpleSpiralSide(turn, above, initialTurn, count, totalCount, flightLengthX, treadWidth, treadDepth, height > 0, intervalActions)
         if count == totalCount then
             break
         end
 
-        turn, count = simpleSpiralSide(turn, initialTurn, count, totalCount, flightLengthZ, treadWidth, treadDepth, height > 0, intervalActions)
+        turn, above, count = simpleSpiralSide(turn, above, initialTurn, count, totalCount, flightLengthZ, treadWidth, treadDepth, height > 0, intervalActions)
         if count == totalCount then
             break
         end
 
-        turn, count = simpleSpiralSide(turn, initialTurn, count, totalCount, flightLengthX, treadWidth, treadDepth, height > 0, intervalActions)
+        turn, above, count = simpleSpiralSide(turn, above, initialTurn, count, totalCount, flightLengthX, treadWidth, treadDepth, height > 0, intervalActions)
     end
 end
 
+function placeTorches(stairInterval, high)
 
+    return function(count, turn, startTurn, above, facingWall)
+        if count % interval ~= 0
+            or turn ~= startTurn
+            or high and not above
+            or above and not high then
+            return true
+        end
 
+        if not facingWall then
+            changeDirection(turn)()
+        end
 
+        local result = (not turtle.detect() or placeForward(2, 14)) and placeForward(16, 16)
 
+        if not facingWall then
+            turn()
+        end
+
+        return result
+    end
+end
+
+function placeRailings(stairInterval)
+
+    return function(count, turn, startTurn, above, facingWall)
+        if above or count % interval ~= 0 or turn == startTurn then
+            return true
+        end
+
+        if not facingWall then
+            changeDirection(turn)()
+        end
+
+        if turtle.detect() then
+            return true
+        end
+
+        forward()
+        placeDown(2, 14)
+        turtle.back()
+        local result = placeForward(15,15)
+
+        if not facingWall then
+            turn()
+        end
+
+        return result
+    end
+end
 
 
 --endregion

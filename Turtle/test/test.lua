@@ -1,6 +1,10 @@
 --region *.lua
-
-local files = fs.find("test/*ationTest")
+local args = { ... }
+local filespec = "test/*"
+if #args > 0 then
+    filespec = args[1]
+end
+local files = fs.find(filespec)
 local results = {}
 local totals = {}
 for i=1, #files do

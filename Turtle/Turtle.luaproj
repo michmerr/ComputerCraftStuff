@@ -57,9 +57,10 @@
     <Compile Include="test\terpTest.lua" />
     <Compile Include="test\test.lua" />
     <Compile Include="test\testCommon.lua" />
-    <Compile Include="Transfer.lua" />
+    <Compile Include="transfer.lua" />
     <Compile Include="rom\apis\turtle\turtle.lua" />
     <Compile Include="terpRefuel.lua" />
+    <Compile Include="tree.lua" />
     <Compile Include="utilities.lua" />
     <Compile Include="waypointCollection.lua" />
     <Compile Include="waypoint.lua" />

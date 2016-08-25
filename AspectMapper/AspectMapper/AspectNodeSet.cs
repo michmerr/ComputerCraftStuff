@@ -56,6 +56,11 @@ namespace AspectMapper
 
             // List of results for each root node.
 
+            var missing = aspectOrders.Where(p => !this.Contains(p.Item1)).Select(p => p.Item1);
+            foreach (var m in missing)
+            {
+                Console.WriteLine(m);
+            }
             var relations = (from t in aspectOrders
                              select GetNOrderRelations(t.Item2, this[t.Item1])).SelectMany(p => p).ToArray();
 
