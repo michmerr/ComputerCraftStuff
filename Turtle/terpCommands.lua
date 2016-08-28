@@ -1,287 +1,210 @@
---region *.lua
---Date
+-- region *.lua
+-- Date
 
 if not utilities then
-    if require then
-        require("utilities")
-    else
-        dofile("utilities")
-    end
+  if require then
+    require("utilities")
+  else
+    dofile("utilities")
+  end
 end
 
 utilities.require("terp")
-utilities.require("location")
-utilities.require("terpRefuel")
-
-function createDefault()
-    local result = terp.create()
-    location.decorate(result)
-    terpRefuel.decorate(result, true)
-    local commands = decorate(result)
-    return result
-end
 
 function decorate(terpTarget)
 
-    local self = {}
+  function digAboveBelow(digPrevious, digNext)
+    if digPrevious then
+      if not digPrevious() then
+        return false
+      end
+    end
+    if digNext then
+      if not digNext() then
+        return false
+      end
+    end
+    return true
+  end
 
-    function self.digLayer(width, length, changeDepth, digPrevious, digNext, turn)
+  function terpTarget.digLayer(length, width, thickness, turn)
 
-        for j = 1, width - 1 do
-            for k = 1, length do
-                if not terpTarget.forward() then
-                    return false
-                end
-                if digPrevious then
-                    digPrevious()
-                end
-                if digNext then
-                    digNext()
-                end
-            end
-            turn()
-            if not terpTarget.forward() then
-                return false
-            end
-            turn()
-            if turn == terpTarget.turnLeft then
-                turn = terpTarget.turnRight
-            else
-                turn = terpTarget.turnLeft
-            end
+    thickness = thickness or 3
+    turn = turn or terpTarget.turnRight
+
+    if thickness == 0 then
+      return turn
+    end
+
+    local absoluteThickness = math.abs(thickness)
+    local digNext = thickness > 0 and terpTarget.digDown or terpTarget.digUp
+    local digPrevious = thickness < 0 and terpTarget.digDown or terpTarget.digUp
+    local moveStart = thickness > 0 and terpTarget.down or terpTarget.up
+
+    if absoluteThickness < 3 then
+      digPrevious = nil
+    end
+
+    if absoluteThickness < 2 then
+      digNext = nil
+      moveStart = nil
+    end
+
+    local verticalLimit = (not moveStart or not moveStart()) or (digNext and not digNext())
+
+    if verticalLimit then
+      digNext = nil
+    end
+
+    for j = 1, width do
+      for k = 1, length do
+        if not digAboveBelow(digPrevious, digNext) then
+          return nil, "Failed to dig up or down"
         end
-        if not terpTarget.forward(length) then
-            return false
+        if not terpTarget.forward() then
+          return nil, "Failed to move forward"
+        end
+      end
+      if not digAboveBelow(digPrevious, digNext) then
+        return nil, "Failed to dig up or down"
+      end
+      -- don't turn at the end of the last row. Let the calling function determine the pattern from layer to layer.
+      if j < width then
+        turn()
+        if not terpTarget.forward() then
+          return nil, "Failed to move forward"
         end
         turn()
+        if turn == terpTarget.turnLeft then
+          turn = terpTarget.turnRight
+        else
+          turn = terpTarget.turnLeft
+        end
+      end
     end
 
-    local function getMoves(length, width, vertical)
-        local changeVertical = terpTarget.up
-        local digPrevious = terpTarget.digDown
-        local digNext = terpTarget.digUp
-        local firstTurn = terpTarget.turnRight
+    return turn, verticalLimit
+  end
 
-        if vertical < 0 then
-            changeVertical = terpTarget.down
-            digPrevious = terpTarget.digUp
-            digNext = terpTarget.digDown
-        end
-
-        if length < 0 then
-            terpTarget.turnLeft()
-            terpTarget.turnLeft()
-            if width > 0 then
-                firstTurn = terpTarget.left
-            end
-        elseif width < 0 then
-            firstTurn = terpTarget.left
-        end
-
-        return firstTurn, changeVertical, digPrevious, digNext
+  function terpTarget.offset(lateral, forward, vertical)
+    if not lateral and not forward and not vertical then
+      return true
     end
 
-    function self.offset(lateral, forward, vertical)
-        if not lateral and not forward and not vertical then
-            return true
+    if lateral then
+      if lateral > 0 then
+        if not terpTarget.right(lateral) then
+          return false
         end
-
-        if lateral then
-            if lateral > 0 then
-                if not terpTarget.stepLeft(lateral) then
-                    return false
-                end
-            elseif (lateral < 0) then
-                if not terpTarget.stepRight(lateral * -1) then
-                    return false
-                end
-            end
+      elseif (lateral < 0) then
+        if not terpTarget.left(lateral * -1) then
+          return false
         end
-
-        if forward then
-            if forward > 0 then
-                if not terpTarget.forward(forward) then
-                    return false
-                end
-            elseif (forward < 0) then
-                if not terpTarget.reverse(forward * -1) then
-                    return false
-                end
-            end
-        end
-
-        if vertical then
-            if vertical > 0 then
-                if not terpTarget.up(vertical) then
-                    return false
-                end
-            elseif (forward < 0) then
-                if not terpTarget.down(vertical * -1) then
-                    return false
-                end
-            end
-        end
-
-        return true
+      end
     end
 
-    function self.tunnel(length, width, height, lateral_offset, horizontal_offset, vertical_offset)
-        if not length or not width or not height then
-            error("length. width, and height values cannot be nil")
+    if forward then
+      if forward > 0 then
+        if not terpTarget.forward(forward) then
+          return false
         end
-
-        local offset = math.floor(width / 2)
-
-        if not self.offset(lateral_offset - offset, horizontal_offset, vertical_offset) then
-            return false
+      elseif (forward < 0) then
+        if not terpTarget.reverse(forward * -1) then
+          return false
         end
-
-        if not depth or depth == 0 then
-            depth = 256
-        end
-
-        local firstTurn, changeDepth, digPrevious, digNext = getMoves(length, width, height)
-
-        height = math.abs(height)
-        length = math.abs(length)
-        width = math.abs(width)
-
-        local level = 0
-        local pivot = false
-        local w = width
-        local l = length
-
-        if not terpInstance.forward() then
-            return false
-        end
-
-        while level < height do
-            -- can't/shouldn't dig any farther, dig this single layer and return.
-            if level == height or not changeDepth() then
-                digPrevious = nil
-                digNext = nil
-                level = height
-            else
-                level = level + 1
-            end
-
-            -- if this is the hard-deck or target height, dig this layer and the previous and return.
-            if level == height or not digNext() then
-                digNext = nil
-            end
-
-            if pivot then
-                w = length
-                l = width
-            else
-                w = width
-                l = length
-            end
-
-            if not self.digLayer(w, l, changeDepth, digPrevious, digNext, firstTurn) then
-                return false
-            end
-
-            if w % 2 == 1 then
-                if firstTurn == terpTarget.turnRight then
-                    firstTurn = terpTarget.turnLeft
-                else
-                    firstTurn = terpTarget.turnRight
-                end
-            end
-            pivot = not pivot
-        end
-        return true
+      end
     end
 
-    function self.hole(length, width, depth, lateral_offset, horizontal_offset, vertical_offset)
-
-        if not length or not width then
-            error("length and width values cannot be nil")
+    if vertical then
+      if vertical > 0 then
+        if not terpTarget.up(vertical) then
+          return false
         end
-
-        if not self.offset(lateral_offset, horizontal_offset, vertical_offset) then
-            return false
+      elseif (forward < 0) then
+        if not terpTarget.down(vertical * -1) then
+          return false
         end
-
-        if not depth or depth == 0 then
-            depth = 256
-        end
-
-        local firstTurn, changeDepth, digPrevious, digNext = getMoves(length, width, depth * -1)
-
-        depth = math.abs(depth)
-        length = math.abs(length)
-        width = math.abs(width)
-
-        local level = 0
-        local pivot = false
-        local w = width
-        local l = length
-
-        while level < depth do
-            -- position is currently above/below the next layer
-            if not changeDepth() then
-                break
-            end
-            level = level + 1
-
-            -- can't/shouldn't dig any farther, dig this single layer and return.
-            if level == depth or not changeDepth() then
-                digPrevious = nil
-                digNext = nil
-                level = depth
-            else
-                level = level + 1
-            end
-
-            -- if this is the hard-deck or target depth, dig this layer and the previous and return.
-            if level == depth or not digNext() then
-                digNext = nil
-            end
-
-            if pivot then
-                w = length
-                l = width
-            else
-                w = width
-                l = length
-            end
-
-            if not self.digLayer(w, l, changeDepth, digPrevious, digNext, firstTurn) then
-                return false
-            end
-
-            if w % 2 == 1 then
-                if firstTurn == terpTarget.turnRight then
-                    firstTurn = terpTarget.turnLeft
-                else
-                    firstTurn = terpTarget.turnRight
-                end
-            end
-            pivot = not pivot
-        end
+      end
     end
 
-    function self.sealSides(length, width, depth, lateral_offset, horizontal_offset, vertical_offset)
+    return true
+  end
 
+  function terpTarget.tunnel(length, width, height, lateral_offset, horizontal_offset, vertical_offset)
+    assert(length, "length must be a positive number.")
+    assert(not width or width > 0, "width must be a positive number.")
+    assert(not width or height > 0, "height must be a positive number.")
+
+    width = width or 1
+    height = height or 2
+    lateral_offset = lateral_offset or 0
+
+    -- Center the tunnel on the reference point
+    local offset = math.floor(width / 2)
+
+    assert(terpTarget.offset(lateral_offset - offset, horizontal_offset, vertical_offset + 1), "failed to move to offset starting position")
+
+    local turn = terpTarget.rightTurn
+    for i = height, 1, -3 do
+      turn = assert(terpTarget.digLayer(length, width, i > 2 and -3 or i * -1, turn))
+      -- Instead of an alternating quarry pattern, keep all layer patterns oriented down the length of the tunnel
+      -- to reduce the number of turns.
+      terpTarget.turnAround()
+      for j = 1, math.min(i, 2) do
+        assert(terpTarget.up(), "failed upward move to next layer")
+      end
+    end
+    return true
+  end
+
+  function terpTarget.hole(length, width, depth, lateral_offset, horizontal_offset, vertical_offset)
+
+    if not length or not width then
+      error("length and width values cannot be nil")
     end
 
-    function self.sealFlat(length, width, depth, lateral_offset, horizontal_offset, vertical_offset)
-
+    if not terpTarget.offset(lateral_offset, horizontal_offset, vertical_offset) then
+      return false
     end
 
-    function self.seal(length, width, depth, lateral_offset, horizontal_offset, vertical_offset)
-
-        if not self.offset(lateral_offset, horizontal_offset, vertical_offset) then
-            return false
+    local turn = terpTarget.rightTurn
+    local crossPattern = length == width
+    local err
+    for i = depth, 1, -3 do
+      turn, err = terpTarget.digLayer(length, width, i > 2 and -3 or i * -1, turn)
+      if t
+      if crossPattern then
+        if turn == terpTarget.turnLeft then
+          turn = terpTarget.turnRight
+        else
+          turn = terpTarget.turnLeft
         end
-
-        if not depth or depth == 0 then
-            depth = 256
-        end
+      else
+        turn()
+      end
+      turn()
+      if i > 2 then
+        assert(terpTarget.digDown(), "failed to move down into area cleared by last pass.")
+      end
+      for j = 1, math.min(2, i) do
+        if not terpTarget.down() then
+      end
     end
+  end
 
-    terpTarget.extend(self)
+  function terpTarget.sealSides(length, width, depth, lateral_offset, horizontal_offset, vertical_offset)
+
+  end
+
+  function terpTarget.sealFlat(length, width, depth, lateral_offset, horizontal_offset, vertical_offset)
+
+  end
+
+  function terpTarget.seal(length, width, depth, lateral_offset, horizontal_offset, vertical_offset)
+    if not terpTarget.offset(lateral_offset, horizontal_offset, vertical_offset) then
+      return false
+    end
+    assert(false, "TODO")
+  end
 end
---endregion
+-- endregion

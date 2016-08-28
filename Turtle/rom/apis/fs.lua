@@ -1,9 +1,13 @@
+if not utilities then
+  dofile("../utilities.lua")
+end
 if not fs then
   fs = {}
 end
 if not fs.list then
   function fs.list( arg0 )
-    return { }
+    local result = os.execute('dir /b '..string.gsub(arg0, "/", "\\"))
+    return string.gsub(result, "\\", "/")
   end
 end
 
@@ -15,7 +19,9 @@ end
 
 if not fs.getName then
   function fs.getName( arg0 )
-    return ""
+    print(arg0)
+    local tokens = string.split(arg0, "/")
+    return string.sub(tokens[#tokens], 1, (string.find(tokens[#tokens], ".", 1, "plain") or 0) - 1)
   end
 end
 
@@ -63,8 +69,8 @@ if not fs.delete then
 end
 
 if not fs.open then
-  function fs.open( arg0 )
-    return 1
+  function fs.open(file, mode)
+    return io.open(file, mode)
   end
 end
 
@@ -81,7 +87,11 @@ end
 
 if not fs.find then
   function fs.find( arg0 )
-    return { }
+    cmd = 'dir /s/b '..string.gsub(arg0, "/", "\\")
+    local f = assert(io.popen(cmd, 'r'))
+    local s = assert(f:read('*a'))
+    f:close()
+    return string.split(string.gsub(s, "\\", "/"),"\n")
   end
 end
 

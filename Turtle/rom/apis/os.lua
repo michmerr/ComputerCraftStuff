@@ -1,6 +1,7 @@
 if not os then
   os = {}
 end
+
 if not os.queueEvent then
   function os.queueEvent( arg0, arg1 )
   end
@@ -90,7 +91,42 @@ if not os.sleep then
 end
 
 if not os.loadAPI then
-    function os.loadAPI( apiName )
-    end
+    function os.loadAPI( _sPath )
+      local sName = fs.getName( _sPath )
+      if string.sub(_sPath, -4) ~= ".lua" then
+        _sPath = _sPath..".lua"
+      end
+      local tEnv = {}
+      setmetatable( tEnv, { __index = _G } )
+      local fnAPI, err = loadfile(_sPath, tEnv )
+      if fnAPI then
+          local ok, err = pcall( fnAPI )
+          if not ok then
+              print("ERROR:"..err )
+              return false
+          end
+      else
+          print("ERROR:".. err )
+          return false
+      end
+
+      local tAPI = {}
+      for k,v in pairs( tEnv ) do
+          if k ~= "_ENV" then
+              tAPI[k] =  v
+          end
+      end
+
+      _G[sName] = tAPI
+      return true
+  end
+end
+
+if not os.unloadAPI then
+  function os.unloadAPI( _sName )
+      if _sName ~= "_G" and type(_G[_sName]) == "table" then
+          _G[_sName] = nil
+      end
+  end
 end
 return os

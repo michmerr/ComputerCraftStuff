@@ -174,7 +174,14 @@ function resupply()
     print("Go time!")
 end
 
-function simpleStepTraversal(turn, above, width, depth, stairsUp, action)
+function simpleStepTraversal(turn, above, width, depth, stairsUp, action, turnAtStart)
+    if turnAtStart then
+      turn = changeDirection(turn)
+      turn()
+      if depth == 1 then
+        turn()
+      end
+    end
     for j =1, depth do
         action(1, turn, above, stairsUp)
         -- save the cost of turning for when stairs are wider than one block
@@ -184,13 +191,12 @@ function simpleStepTraversal(turn, above, width, depth, stairsUp, action)
             for i = 2, width do
                 forward()
                 action(i, turn, above, stairsUp)
-                -- turn back to face forward after a > 1 width traversal
-                if i == width then
-                    turn()
-                end
             end
         end
-
+        if j < depth then
+          turn()
+          forward()
+        end
     end
     return turn
 end
@@ -274,25 +280,26 @@ function simpleStep(turn, above, startTurn, width, depth, stairsUp, intervalActi
 
     runIntervalActions(intervalActions, count, turn, above, startTurn, above, false)
 
+    local facingSide = width > 1
     if above then
         turn = simpleStepTraversal(turn, above, width, depth, stairsUp, clearAirspace, false)
-        runIntervalActions(intervalActions, count, turn, above, startTurn, true, false)
+        runIntervalActions(intervalActions, count, turn, above, startTurn, true, facingSide)
         down()
         down()
-        runIntervalActions(intervalActions, count, turn, above, startTurn, false, false)
+        runIntervalActions(intervalActions, count, turn, above, startTurn, false, facingSide)
         turn = simpleStepTraversal(turn, above, width, depth, stairsUp, layTread, true)
     else
         turn = simpleStepTraversal(turn, above, width, depth, stairsUp, layTread, false)
-        runIntervalActions(intervalActions, count, turn, above, startTurn, false, false)
+        runIntervalActions(intervalActions, count, turn, above, startTurn, false, facingSide)
         up()
         up()
-        runIntervalActions(intervalActions, count, turn, above, startTurn, true, false)
+        runIntervalActions(intervalActions, count, turn, above, startTurn, true, facingSide)
         turn = simpleStepTraversal(turn, above, width, depth, stairsUp, clearAirspace, true)
     end
 
     runIntervalActions(intervalActions, count, turn, above, startTurn, not above, false)
 
-    return turn, above, not above, count
+    return turn, not above, count
 end
 
 function simpleFlight(turn, above, startTurn, length, width, depth, stairsUp, intervalActions, count)

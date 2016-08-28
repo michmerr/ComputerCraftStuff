@@ -1,6 +1,20 @@
 --region *.lua
+if not fs then
+  dofile("../rom/apis/fs.lua")
+  loadfile = function( _sFile, _tEnv )
+    local file = fs.open( _sFile, "r" )
+    if file then
+        local func, err = load( file:read("*a"), fs.getName( _sFile ), "t", _tEnv )
+        file.close()
+        return func, err
+    end
+    return nil, "File not found"
+  end
+  dofile("../rom/apis/os.lua")
+end
+
 local args = { ... }
-local filespec = "test/*"
+local filespec = "./*"
 if #args > 0 then
     filespec = args[1]
 end
@@ -8,10 +22,11 @@ local files = fs.find(filespec)
 local results = {}
 local totals = {}
 for i=1, #files do
-
     os.loadAPI(files[i])
     local api = fs.getName(files[i])
     local testTable = _G[api]
+    print(api)
+    for k,v in pairs(_G) do print(k) end
     local maxlength = 0
     totals[api] = { passed = 0; failed = 0 }
     for name, func in pairs(testTable) do

@@ -9,7 +9,7 @@ function new(list)
 end
 
 function load(filename)
-    local file = assert(io.open(filename, "r"), "File note found: "..filename)
+    local file = assert(io.open(filename, "r"), "File not found: "..filename)
     local raw = file:read("*a")
     local list = loadstring("return "..raw)()
     return new(list)

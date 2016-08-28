@@ -252,3 +252,5 @@ paket-files/
 *.sln.iml
 /Turtle/deploy.cmd
 /Turtle/_bootstrap.lua
+/Turtle/terpStairs.lua
+/Turtle/foo.html

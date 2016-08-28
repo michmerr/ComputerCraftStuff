@@ -3,13 +3,13 @@
 --Mock terp
 
 if not testCommon then
-    os.loadAPI("test/testCommon")
+    os.loadAPI("./testCommon")
 end
 
-testCommon.reloadAPI("terp", "test/mocks/terp")
-testCommon.reloadAPI("orientation", "test/mocks/orientation")
-testCommon.reloadAPI("location", "location")
-testCommon.reloadAPI("matrix", "matrix")
+testCommon.reloadAPI("terp", "./mocks/terp")
+testCommon.reloadAPI("orientation", "./mocks/orientation")
+testCommon.reloadAPI("location", "../location")
+testCommon.reloadAPI("matrix", "../matrix")
 
 function _testCreateHelper(arg)
     local target = location.create(arg)
@@ -133,5 +133,8 @@ function testHowFarRelative2()
     _testHowFarHelper(10, -9, 0, 16, 4, 9)
 end
 
+function testDecorate()
+    assert(false, "TODO")
+end
 
 --endregion

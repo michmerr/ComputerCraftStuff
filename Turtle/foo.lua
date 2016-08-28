@@ -6,6 +6,9 @@ function c()
 	bar = true
 	return a
 end
+test
+test
+test
 
 b = load(c)()
 print(b.foo)

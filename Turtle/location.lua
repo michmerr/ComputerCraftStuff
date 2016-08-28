@@ -60,18 +60,27 @@ function decorate(targetTerp)
 
     local _location = create()
 
-    local result = {}
+    local function wrapMovementFunction(wrapFunc, locFunc)
+        return function(...)
+            local result = wrapFunc(...)
+            if result then
+                locFunc()
+            end
+            return result
+       end
+    end
 
     for direction in { "Up", "Down", "Forward", "Back" } do
-        result["after_"..direction.lower] = _location["move"..direction]
+        local funcName = direction.lower
+        targetTerp[funcName] = wrapMovementFunction(targetTerp[funcName], _location["move"..direction])
     end
 
-    for direction in { "Right", "Left" } do
-        result["after_turn"..direction] = _location["turn"..direction]
+    for direction in { "turnRight", "Left" } do
+        targetTerp[direction] = wrapMovementFunction(targetTerp[direction], _location[direction])
     end
 
-    result.getlocation = _location.getlocation
-    result.howFar = _location.howFar
+    targetTerp.getLocation = _location.getLocation
+    targetTerp.howFar = _location.howFar
 
     function turnTo(x, z)
         if math.abs(x) == math.abs(y) then
@@ -119,8 +128,8 @@ function decorate(targetTerp)
         end
     end
 
-    function result.moveTo(x, y, z)
-        local start = _location.getlocation()
+    function targetTerp.moveTo(x, y, z)
+        local start = _location.getLocation()
 
         dX = x - start.x
         dY = y - start.y
@@ -141,7 +150,7 @@ function decorate(targetTerp)
         end
     end
 
-    targetTerp.extend(result)
+    return _location
 end
 
 --endregion

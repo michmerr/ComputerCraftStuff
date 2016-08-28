@@ -92,7 +92,7 @@ function utilities.waitForEvent(timeout, ...)
     return false
 end
 
-function string.split(s, separator)
+function string.split(s, separator, removeEmpty)
     local result = { }
     local sepWidth = string.len(separator)
     local index = ( sepWidth * -1) + 1
