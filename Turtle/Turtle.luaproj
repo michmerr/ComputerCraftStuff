@@ -53,6 +53,7 @@
     <Compile Include="rom\apis\term.lua" />
     <Compile Include="terp.lua" />
     <Compile Include="terpCommands.lua" />
+    <Compile Include="test\stairsTest.lua" />
     <Compile Include="test\terpCommandsTest.lua" />
     <Compile Include="test\terpRefuelTest.lua" />
     <Compile Include="test\terpTest.lua" />

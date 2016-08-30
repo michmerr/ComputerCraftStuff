@@ -1,6 +1,14 @@
 --region *.lua
 --Date
 
+if not terp then
+  os.loadAPI("terp")
+end
+
+if not location then
+  os.loadAPI("location")
+end
+
 function selectMaterialSlot(lower, upper, types)
     if turtle.getSelectedSlot() >= lower and turtle.getSelectedSlot() <= upper and turtle.getItemCount() > 0 then
         return true
@@ -17,125 +25,30 @@ function selectMaterialSlot(lower, upper, types)
     return false
 end
 
-local function digUntil(digFunc, detectFunc)
-    if not detectFunc() then
-        return false
-    end
-
-    local result = digFunc()
-    while detectFunc() do
-        os.sleep(0.5)
-        result = digFunc()
-    end
-    return result
-end
-
-local function dig()
-  return digUntil(turtle.dig, turtle.detect)
-end
-
-local function digUp()
-  return digUntil(turtle.digUp, turtle.detectUp)
-end
-
-local function digDown()
-  return digUntil(turtle.digDown, turtle.detectDown)
-end
-
-
-local function move(detectFunc, digFunc, moveFunc, attackFunc, suckFunc)
-    if detectFunc() then
-        digUntil(digFunc, detectFunc)
-    end
-
-    -- I feel like I'm encouraging some twisted behavior right here.
-    if not moveFunc() then
-        while attackFunc() do
-            suckFunc()
-        end
-        if not moveFunc() then
-            return false
-        end
-    end
-end
-
-local function down()
-    local result = move(turtle.detectDown, turtle.digDown, turtle.down, turtle.attackDown, turtle.suckDown)
-    if result then
-        y = y - 1
-    end
-
-    return result
-
-end
-
-local function up()
-    local result = move(turtle.detectUp, turtle.digUp, turtle.up, turtle.attackUp, turtle.suckUp)
-    if result then
-        y = y + 1
-    end
-    return result
-end
-
-local function forward()
-    local result = move(turtle.detect, turtle.dig, turtle.forward, turtle.attack, turtle.suck)
-    if result then
-        x = x + xDir
-        z = z + zDir
-    end
-    return result
-end
-
 -- -1 out of materials, 0 place failed, 1 place succeeded, 2 block already occupied
-local function place(placeFunc, detectFunc, attackFunc, slotLow, slotHigh, materialType)
+local function place(placeFunc, slotLow, slotHigh, materialType)
     if not selectMaterialSlot(slotLow, slotHigh, materialType) then
         return -1
     end
 
-    if detectFunc() then
-        return 2
+    if placeFunc() then
+      return 1
+    else
+      return 0
     end
-    if not placeFunc() then
-        if attackFunc() then
-            repeat
-                print("Mob blocking placement")
-            until attackFunc()
-            print("Mob cleared")
-            if not placeFunc() then
-                return 0
-            end
-        end
-        return 0
-    end
-    return 1
 end
 
-local function placeUp(slotLow, slotHig, materialType)
-    return place(turtle.placeUp, turtle.detectUp, turtle.attackUp, slotLow, slotHig, materialType)
+local function placeUp(slotLow, slotHigh, materialType)
+    return place(turtle.placeUp, slotLow, slotHigh, materialType)
 end
 
-local function placeDown(slotLow, slotHig, materialType)
-    return place(turtle.placeDown, turtle.detectDown, turtle.attackDown, slotLow, slotHig, materialType)
+local function placeDown(slotLow, slotHigh, materialType)
+    return place(turtle.placeDown, slotLow, slotHigh, materialType)
 end
 
-local function placeForward(slotLow, slotHig, materialType)
-    return place(turtle.place, turtle.detect, turtle.attack, slotLow, slotHig, materialType)
+local function placeForward(slotLow, slotHigh, materialType)
+    return place(turtle.place, turtle.detect, turtle.attack, slotLow, slotHigh, materialType)
 end
-
-local function turnRight()
-    turtle.turnRight()
-    local _zDir = xDir * - 1
-    xDir = zDir
-    zDir = _zDir
-end
-
-local function turnLeft()
-    turtle.turnLeft()
-    local _zDir = xDir
-    xDir = zDir * -1
-    zDir = _zDir
-end
-
 
 local function changeDirection(turn)
     if turn == turnLeft then
@@ -179,7 +92,7 @@ function simpleStepTraversal(turn, above, width, depth, stairsUp, action, turnAt
             turn()
             turn = changeDirection(turn)
             for i = 2, width do
-                forward()
+                turtle.forward()
                 action(i, turn, above, stairsUp)
             end
         end
@@ -236,8 +149,8 @@ function layTread(iteration, turn, above, stairsUp)
 end
 
 function clearAirspace(iteration, turn, above, stairsUp)
-    digDown()
-    digUp()
+    turtle.digDown()
+    turtle.digUp()
 end
 
 function runIntervalActions(intervalActions, count, currentTurn, startTurn, above, facingWall)
@@ -274,15 +187,15 @@ function simpleStep(turn, above, startTurn, width, depth, stairsUp, intervalActi
     if above then
         turn = simpleStepTraversal(turn, above, width, depth, stairsUp, clearAirspace, false)
         runIntervalActions(intervalActions, count, turn, above, startTurn, true, facingSide)
-        down()
-        down()
+        turtle.down()
+        turtle.down()
         runIntervalActions(intervalActions, count, turn, above, startTurn, false, facingSide)
         turn = simpleStepTraversal(turn, above, width, depth, stairsUp, layTread, true)
     else
         turn = simpleStepTraversal(turn, above, width, depth, stairsUp, layTread, false)
         runIntervalActions(intervalActions, count, turn, above, startTurn, false, facingSide)
-        up()
-        up()
+        turtle.up()
+        turtle.up()
         runIntervalActions(intervalActions, count, turn, above, startTurn, true, facingSide)
         turn = simpleStepTraversal(turn, above, width, depth, stairsUp, clearAirspace, true)
     end
@@ -318,7 +231,7 @@ function turnCorner(turn, initialTurn, centerAnchor, treadWidth)
         changeDirection(initialTurn())()
         if initialTurn ~= turn then
             for j = 2, treadWidth do
-                forward()
+                turtle.forward()
             end
         else
             turn = changeDirection(turn)
@@ -327,7 +240,7 @@ function turnCorner(turn, initialTurn, centerAnchor, treadWidth)
         initialTurn()
         if initialTurn == turn then
             for j = 2, treadWidth do
-                forward()
+                turtle.forward()
             end
         else
             turn = initialTurn
@@ -370,15 +283,15 @@ function simpleSpiralStairs(height, clockwise, centerAnchor, anchorWallLength, a
 
     local turn, above, initialTurn
     if (clockwise and centerAnchor) or (not clockwise and not centerAnchor) then
-        turn = turnLeft
+        turn = turtle.turnLeft
     else
-        turn = turnRight
+        turn = turtle.turnRight
     end
     initialTurn = turn
 
     if not centerAnchor then
         -- flush landing
-        up()
+        turtle.up()
         turn, above, count = simpleStep(turn, above, initialTurn, treadWidth, treadWidth, false, intervalActions, count)
     end
 
@@ -416,7 +329,7 @@ function placeTorches(stairInterval, high)
             changeDirection(turn)()
         end
 
-        local result = (not turtle.detect() or placeForward(2, 14)) and placeForward(16, 16)
+        local result = (turtle.detect() or placeForward(2, 14)) and placeForward(16, 16)
 
         if not facingWall then
             turn()
@@ -441,7 +354,7 @@ function placeRailings(stairInterval)
             return true
         end
 
-        forward()
+        turtle.forward()
         placeDown(2, 14)
         turtle.back()
         local result = placeForward(15,15)

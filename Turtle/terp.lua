@@ -55,12 +55,45 @@ local function move(moveFunc, detectFunc, digFunc, attackFunc)
   end
 end
 
+local function place(placeFunc, detectFunc, attackFunc)
+    if detectFunc() then
+        return false
+    end
+    if placeFunc() then
+      return true
+    end
+
+    if attackFunc() then
+        repeat
+            print("Mob blocking placement")
+        until not attackFunc()
+        print("Mob cleared")
+        if placeFunc() then
+            return true
+        end
+    end
+    return false
+
+end
+
+function turtle.place()
+  return place(base.place, base.detect, base.attack)
+end
+
+function turtle.placeDown()
+  return place(base.placeDown, base.detectDown, base.attackDown)
+end
+
+function turtle.placeUp()
+  return place(base.placeUp, base.detectDown, base.attackUp)
+end
+
 function turtle.forward()
-  return move(baseforward, basedetect, turtle, dig, baseattack)
+  return move(base.forward, base.detect, turtle, dig, base.attack)
 end
 
 function turtle.back()
-  local result = baseback()
+  local result = base.back()
   if not result then
     turtle.turnAround()
     result = turtle.forward()
@@ -70,11 +103,11 @@ function turtle.back()
 end
 
 function turtle.up()
-  return move(baseup, basedetectUp, turtle, digUp, baseattackUp)
+  return move(base.up, base.detectUp, turtle, digUp, base.attackUp)
 end
 
 function turtle.down()
-  return move(basedown, basedetectDown, turtle, digDown, baseattackDown)
+  return move(base.down, base.detectDown, turtle, digDown, base.attackDown)
 end
 
 function turtle.right(distance)
