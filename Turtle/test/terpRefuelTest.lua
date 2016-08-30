@@ -1,8 +1,10 @@
 --region *.lua
 
-require("refuel")
+os.loadAPI("terpRefuel")
 
-
+function testDummy()
+  assert(false, "TODO")
+end
 
 
 --endregion

@@ -92,6 +92,11 @@ function create(state)
         return translate(translations.forward)
     end
 
+    function self.getFacing()
+      local fX, fY, fZ = translate(translations.forward)
+      return { x = fX; y = fY; z = fZ }
+    end
+
     function self.translateBackward()
         return translate(translations.back)
     end

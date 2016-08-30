@@ -19,7 +19,7 @@ end
 
 if not fs.getName then
   function fs.getName( arg0 )
-    print(arg0)
+    -- print(arg0)
     local tokens = string.split(arg0, "/")
     return string.sub(tokens[#tokens], 1, (string.find(tokens[#tokens], ".", 1, "plain") or 0) - 1)
   end
@@ -87,11 +87,11 @@ end
 
 if not fs.find then
   function fs.find( arg0 )
-    cmd = 'dir /s/b '..string.gsub(arg0, "/", "\\")
+    cmd = 'dir /b/a-d '..string.gsub(arg0, "/", "\\")
     local f = assert(io.popen(cmd, 'r'))
     local s = assert(f:read('*a'))
     f:close()
-    return string.split(string.gsub(s, "\\", "/"),"\n")
+    return string.split(string.gsub(s, "\\", "/"),"\n", true)
   end
 end
 
@@ -101,4 +101,24 @@ if not fs.getDir then
   end
 end
 
+loadfile = function( _sFile, _tEnv )
+  local file = fs.open( _sFile, "r" )
+  if not file then
+    local searchPath = string.split(package.path, ";", true)
+    for i = 1, #searchPath do
+      local path = string.gsub(searchPath[i], '?', _sFile)
+      -- print("trying: "..path)
+      file = fs.open(path, "r")
+      if file then
+        break
+      end
+    end
+  end
+  if file then
+      local func, err = load( file:read("*a"), fs.getName( _sFile ), "t", _tEnv )
+      file.close()
+      return func, err
+  end
+  return nil, "File not found"
+end
 return fs

@@ -42,6 +42,7 @@
     <Compile Include="test\mocks\orientation.lua" />
     <Compile Include="test\mocks\terp.lua" />
     <Compile Include="orientation.lua" />
+    <Compile Include="test\mocks\turtle.lua" />
     <Compile Include="test\orientationTest.lua" />
     <Compile Include="rom\apis\os.lua" />
     <Compile Include="rom\apis\peripheral.lua" />

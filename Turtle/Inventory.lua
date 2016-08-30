@@ -20,6 +20,22 @@ function inventory.decorate(terpInstance, keepItems, dropPoint)
 
     local extension = { }
 
+    function selectMaterialSlot(lower, upper, types)
+      if turtle.getSelectedSlot() >= lower and turtle.getSelectedSlot() <= upper and turtle.getItemCount() > 0 then
+          return true
+      end
+  --TODO: check against list of acceptable item types
+
+      for i = lower, upper do
+          if turtle.getItemCount(i) > 0 then
+              turtle.select(i)
+              return true
+          end
+      end
+
+      return false
+    end
+
     function extension.triggerDrop()
         return instance.triggerDrop(terpInstance)
     end

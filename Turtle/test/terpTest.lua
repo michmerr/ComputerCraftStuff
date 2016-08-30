@@ -8,13 +8,7 @@ if not testCommon then
 end
 
 testCommon.reloadAPI("turtle", "test/mocks/turtle")
-testCommon.reloadAPI("terp", "test/mocks/turtle")
-
-function testCreate()
-    local target = terp.create()
-    assert(target, "Expected a non-nil object")
-    return true
-end
+testCommon.reloadAPI("terp", "terp")
 
 function testTurnAround()
     assert(false, "TODO")

@@ -99,11 +99,15 @@ function string.split(s, separator, removeEmpty)
     local toIndex
     while index do
         toIndex = string.find(s, separator, index + sepWidth)
+        local token
         if toIndex then
-            table.insert(result, string.sub(s, index, toIndex - 1))
+            token = string.sub(s, index, toIndex - 1)
             toIndex = toIndex + 1
         else
-            table.insert(result, string.sub(s, index))
+          token = string.sub(s, index)
+        end
+        if (token and string.len(token) > 0) or not removeEmpty then
+          table.insert(result, token)
         end
         index = toIndex
     end

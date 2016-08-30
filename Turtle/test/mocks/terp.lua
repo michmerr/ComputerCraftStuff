@@ -1,89 +1,142 @@
---region *.lua
---Date
---Mock terp
+-- region *.lua
+-- Date
+-- Mock terp
 
-function create()
-    local self = {}
+local mockData = { calls = { }; expected = { }; }
+if not testCommon then
+  os.loadAPI(testCommon)
+end
+testCommon.reloadAPI("turtle", "test/mocks/turtle")
 
-    function self.extend(table)
-        return self.expected.extend
-    end
+local turnRightIndex = 0
+function turtle.turnRight()
+  turnRightIndex = turnRightIndex + 1
+  table.insert(mockData.calls, "turnRight")
+  return mockData.expected.turnRight[turnRightIndex]
+end
 
-    function self.turnRight()
-        return self.expected.turnRight
-    end
+local turnLeftIndex = 0
+function turtle.turnLeft()
+  turnLeftIndex = turnLeftIndex + 1
+  table.insert(mockData.calls, "turnLeft")
+  return mockData.expected.turnLeft[turnLeftIndex]
+end
 
-    function self.turnLeft()
-        return self.expected.turnLeft
-    end
+local digIndex = 0
+function turtle.dig()
+  digIndex = digIndex + 1
+  table.insert(mockData.calls, "dig")
+  return mockData.expected.dig[digIndex]
+end
 
-    function self.dig()
-        return self.expected.dig
-    end
+local digUpIndex = 0
+function turtle.digUp()
+  digUpIndex = digUpIndex + 1
+  table.insert(mockData.calls, "digUp")
+  return mockData.expected.digUp[digUpIndex]
+end
 
-    function self.digUp()
-        return self.expected.digUp
-    end
+local digDownIndex = 0
+function turtle.digDown()
+  digDownIndex = digDownIndex + 1
+  table.insert(mockData.calls, "digDown")
+  return mockData.expected.digUp[digDownIndex]
+end
 
-    function self.digDown()
-        return self.expected.digUp
-    end
+local detectIndex = 0
+function turtle.detect()
+  detectIndex = detectIndex + 1
+  table.insert(mockData.calls, "detect")
+  return mockData.expected.detect[detectIndex]
+end
 
-    function self.detect()
-        return self.expected.detect
-    end
+local detectUpIndex = 0
+function turtle.detectUp()
+  detectUpIndex = detectUpIndex + 1
+  table.insert(mockData.calls, "detectUp")
+  return mockData.expected.detectUp[detectUpIndex]
+end
 
-    function self.detectUp()
-        return self.expected.detectUp
-    end
+local detectDownIndex = 0
+function turtle.detectDown()
+  detectDownIndex = detectDownIndex + 1
+  table.insert(mockData.calls, "detectDown")
+  return mockData.expected.detectDown[detectDownIndex]
+end
 
-    function self.detectDown()
-        return self.expected.detectDown
-    end
+local detectRightIndex = 0
+function turtle.detectRight()
+  detectRightIndex = detectRightIndex + 1
+  table.insert(mockData.calls, "detectRight")
+  return mockData.expected.detectRight[detectRightIndex]
+end
 
-    function self.detectRight()
-        return self.expected.detectRight
-    end
+local detectLeftIndex = 0
+function turtle.detectLeft()
+  detectLeftIndex = detectLeftIndex + 1
+  table.insert(mockData.calls, "detectLeft")
+  return mockData.expected.detectLeft[detectLeftIndex]
+end
 
-    function self.detectLeft()
-        return self.expected.detectLeft
-    end
+local detectBackIndex = 0
+function turtle.detectBack()
+  detectBackIndex = detectBackIndex + 1
+  table.insert(mockData.calls, "detectBack")
+  return mockData.expected.detectBack[detectBackIndex]
+end
 
-    function self.detectBack()
-        return self.expected.detectBack
-    end
+local forwardIndex = 0
+function turtle.forward()
+  forwardIndex = forwardIndex + 1
+  table.insert(mockData.calls, "forward")
+  return mockData.expected.forward[forwardIndex]
+end
 
-    function self.forward(distance)
-        return self.expected.forward == distance
-    end
+local backIndex = 0
+function turtle.back()
+  backIndex = backIndex + 1
+  table.insert(mockData.calls, "back")
+  return mockData.expected.back[backIndex]
+end
 
-    function self.back(distance)
-        return self.expected.back == distance
-    end
+local reverseIndex = 0
+function turtle.reverse()
+  reverseIndex = reverseIndex + 1
+  table.insert(mockData.calls, "reverse")
+  return mockData.expected.reverse[reverseIndex]
+end
 
-    function self.reverse(distance)
-        return self.expected.reverse == distance
-    end
+local upIndex = 0
+function turtle.up()
+  upIndex = upIndex + 1
+  table.insert(mockData.calls, "up")
+  return mockData.expected.up[upIndex]
+end
 
-    function self.up(distance)
-        return self.expected.up == distance
-    end
+local downIndex = 0
+function turtle.down()
+  downIndex = downIndex + 1
+  table.insert(mockData.calls, "down")
+  return mockData.expected.down[downIndex]
+end
 
-    function self.down(distance)
-        return self.expected.down == distance
-    end
+local rightIndex = 0
+function turtle.right(distance)
+  rightIndex = rightIndex + 1
+  table.insert(mockData.calls, "right")
+  return mockData.expected.right[rightIndex]
+end
 
-    function self.right(distance)
-        return self.expected.right == distance
-    end
+local leftIndex = 0
+function turtle.left(distance)
+  leftIndex = leftIndex + 1
+  table.insert(mockData.calls, "left")
+  return mockData.expected.left[leftIndex]
+end
 
-    function self.left(distance)
-        return self.expected.left == distance
-    end
-
-    return self
+function getMockData()
+  return mockData;
 end
 
 
-
---endregion
+-- endregion

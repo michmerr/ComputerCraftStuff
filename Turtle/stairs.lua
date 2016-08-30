@@ -1,16 +1,6 @@
 --region *.lua
 --Date
 
-if not turtle then
-    require("turtle")
-end
-
-local x = 0
-local y = 0
-local z = 0
-local xDir = 0
-local zDir = 1
-
 function selectMaterialSlot(lower, upper, types)
     if turtle.getSelectedSlot() >= lower and turtle.getSelectedSlot() <= upper and turtle.getItemCount() > 0 then
         return true

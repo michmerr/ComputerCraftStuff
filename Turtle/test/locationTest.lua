@@ -6,16 +6,16 @@ if not testCommon then
     os.loadAPI("./testCommon")
 end
 
-testCommon.reloadAPI("terp", "./mocks/terp")
-testCommon.reloadAPI("orientation", "./mocks/orientation")
-testCommon.reloadAPI("location", "../location")
-testCommon.reloadAPI("matrix", "../matrix")
+testCommon.reloadAPI("terp", "test/mocks/terp")
+testCommon.reloadAPI("orientation", "test/mocks/orientation")
+testCommon.reloadAPI("location", "location")
+testCommon.reloadAPI("matrix", "matrix")
 
 function _testCreateHelper(arg)
     local target = location.create(arg)
     assert(target, "nil location returned from create()")
 
-    assert(target.expected.orientationCreateCalled, "orientation.create() not called")
+    assert(orientation.getMockData and orientation.getMockData().calls[1] and orientation.getMockData().calls[1] == "create", "orientation.create() not called")
 
     if arg then
         if arg.attitude then
@@ -51,7 +51,9 @@ end
 
 function _testHelper(func, expected)
     local target = location.create()
-    target.expected[expected] = { 2; 0; 0 }
+    local globalMockOrientationData = orientation.getMockData()
+    local instanceMockData = globalMockOrientationData.instances[#globalMockOrientationData.instances]
+    instanceMockData.expected[expected] = { { 2, 0, 0 } }
     local loc = target[func]()
     assert(loc and loc.x == 2, "Did not see expected call to"..expected)
     return true
@@ -94,7 +96,9 @@ end
 
 function testGetLocationAfterSimpleMove()
     local target = location.create()
-    target.expected.translateForward = { 0; 0; 1 }
+    local globalMockOrientationData = orientation.getMockData()
+    local instanceMockData = globalMockOrientationData.instances[#globalMockOrientationData.instances]
+    instanceMockData.expected.translateForward = { { 0; 0; 1 } }
     target.moveForward()
     _testLocationHelper(target, 0, 0, 1)
 end
