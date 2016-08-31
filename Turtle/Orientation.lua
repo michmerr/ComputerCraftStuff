@@ -6,6 +6,60 @@ else
     os.loadAPI("matrix")
 end
 
+
+-- The definitions are based on a vertical Y axis, and a Z axis in the same plane as the X.
+translations = {
+    ["forward"] = matrix.new( { { 0 }; { 0 }; { 1 } } );
+    ["back"] = matrix.new( { { 0 }; { 0 }; { -1 } } );
+    ["left"] = matrix.new( { { -1 }; { 0 }; { 0 } } );
+    ["right"] = matrix.new( { { 1 }; { 0 }; { 0 } } );
+    ["up"] = matrix.new( { { 0 }; { 1 }; { 0 } } );
+    ["down"] = matrix.new( { { 0 }; { -1 }; { 0 } } )
+}
+
+transforms = {
+    ["yawRight"] = matrix.new( {
+        { 0; 0; 1 };
+        { 0; 1; 0 };
+        { -1; 0; 0 }
+    });
+    ["yawLeft"] = matrix.new( {
+        { 0; 0; -1 };
+        { 0; 1; 0 };
+        { 1; 0; 0 }
+    });
+    ["pitchUp"] = matrix.new( {
+        { 1; 0; 0 };
+        { 0; 0; 1 };
+        { 0; -1; 0 }
+    });
+    ["pitchDown"] = matrix.new( {
+        { 1; 0; 0 };
+        { 0; 0; -1 };
+        { 0; 1; 0 }
+    });
+    ["rollRight"] = matrix.new( {
+        { 0; 1; 0 };
+        { -1; 0; 0 };
+        { 0; 0; 1 }
+    });
+    ["rollLeft"] = matrix.new( {
+        { 0; -1; 0 };
+        { 1; 0; 0 };
+        { 0; 0; 1 }
+    });
+}
+
+function translate(from, to)
+    local result = from * to
+    return result[1][1], result[2][1], result[3][1]
+end
+
+function getFacing(from, to)
+  local fX, fY, fZ = translate(from, to)
+  return { x = fX; y = fY; z = fZ }
+end
+
 function create(state)
 
     local attitude = matrix.new(state or {
@@ -16,48 +70,9 @@ function create(state)
 
     local self = {}
 
-    local transforms = {
-        ["yawRight"] = matrix.new( {
-            { 0; 0; 1 };
-            { 0; 1; 0 };
-            { -1; 0; 0 }
-        });
-        ["yawLeft"] = matrix.new( {
-            { 0; 0; -1 };
-            { 0; 1; 0 };
-            { 1; 0; 0 }
-        });
-        ["pitchUp"] = matrix.new( {
-            { 1; 0; 0 };
-            { 0; 0; 1 };
-            { 0; -1; 0 }
-        });
-        ["pitchDown"] = matrix.new( {
-            { 1; 0; 0 };
-            { 0; 0; -1 };
-            { 0; 1; 0 }
-        });
-        ["rollRight"] = matrix.new( {
-            { 0; 1; 0 };
-            { -1; 0; 0 };
-            { 0; 0; 1 }
-        });
-        ["rollLeft"] = matrix.new( {
-            { 0; -1; 0 };
-            { 1; 0; 0 };
-            { 0; 0; 1 }
-        });
-    }
-
-    -- The definitions are based on a vertical Y axis, and a Z axis in the same plane as the X.
-    local translations = {
-        ["forward"] = matrix.new( { { 0 }; { 0 }; { 1 } } );
-        ["back"] = matrix.new( { { 0 }; { 0 }; { -1 } } );
-        ["left"] = matrix.new( { { -1 }; { 0 }; { 0 } } );
-        ["right"] = matrix.new( { { 1 }; { 0 }; { 0 } } );
-        ["up"] = matrix.new( { { 0 }; { 1 }; { 0 } } );
-        ["down"] = matrix.new( { { 0 }; { -1 }; { 0 } } )
-    }
+    function self.getState()
+      return attitude.clone()
+    end
 
     function self.yawRight()
         attitude = attitude * transforms.yawRight

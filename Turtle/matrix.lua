@@ -79,6 +79,18 @@ function matrixBase:equals(m)
     return true
 end
 
+function matrixBase:clone()
+  local result = { }
+  for i = 1, #self do
+    local row = { }
+    for j = 1, #self[i] do
+      table.insert(row, self[i][j])
+    end
+    table.insert(result, row)
+  end
+  return result
+end
+
 mt.__eq = matrixBase.equals
 mt.__mul = matrixBase.multiply
 mt.__tostring = matrixBase.tostring

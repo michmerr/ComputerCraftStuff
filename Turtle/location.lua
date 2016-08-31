@@ -45,7 +45,12 @@ function create(state)
   end
 
   function self.getLocation()
-    return { ["x"] = x;["y"] = y;["z"] = z; }
+    return {
+      attitude = getOrientationState();
+      x = x;
+      y = y;
+      z = z
+      }
   end
 
   -- Distance to coords in right-angle moves
@@ -83,7 +88,13 @@ turtle.howFar = _location.howFar
 turtle.getFacing = _location.getFacing
 
 function turtle.turnTo(x, z)
-  if math.abs(x) == math.abs(y) then
+  if type(x) == "table" then
+    assert(x.x and x.z)
+    z = x.z
+    x = x.x
+  end
+
+  if math.abs(x) == math.abs(z) then
     error("90 degree directions only. One value must be 0, and the other must be positive or negative to indicate the facing along that axis.")
   end
 
@@ -130,6 +141,20 @@ end
 
 function turtle.moveTo(x, y, z)
   local start = _location.getLocation()
+
+  if type(x) == "table" then
+    if x.x and x.y and x.z then
+      y = x.y
+      z = x.z
+      x = x.x
+    elseif #x == 3 then
+      y = x[2]
+      z = x[3]
+      x = x[1]
+    else
+      error("Arguments must be x, y, z; a table with x, y, z keys; or a list of three numbers")
+    end
+  end
 
   dX = x - start.x
   dY = y - start.y
