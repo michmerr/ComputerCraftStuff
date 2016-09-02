@@ -110,6 +110,7 @@ loadfile = function( _sFile, _tEnv )
       -- print("trying: "..path)
       file = fs.open(path, "r")
       if file then
+       -- print("opened "..path)
         break
       end
     end

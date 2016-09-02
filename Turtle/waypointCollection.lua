@@ -1,12 +1,22 @@
 --region *.lua
 --Date
 
+--
+-- The intent is to allow a series of waypoints to be defined for sequential movement. This allows
+-- for specific routing, whether to a destination or retracing a path. In many cases this is overkill,
+-- but in cases where a series of different actions has been performed, placing a lot of solid objects
+-- between the current and target position, it can prevent slower, destructive transit through that space.
+
+if not terp then
+  os.loadAPI("terp")
+end
+
+if not location then
+  os.loadAPI("location")
+end
+
 if not waypoint then
-    if require then
-        require("waypoint")
-    else
-        os.loadAPI("waypoint")
-    end
+  os.loadAPI("waypoint")
 end
 
 function create( ... )
@@ -77,58 +87,51 @@ function create( ... )
     return self
 end
 
-function decorate(terpInstance)
 
-    local _waypoints = create()
-    local _howFar = terpInstance.howFar
+local _waypoints = create()
+local _howFar = turtle.howFar
 
-    local self = { }
+function turtle.setWaypoint(label, xCoord, yCoord, zCoord)
+    local result
+    if xCoord and yCoord and zCoord then
+        result = waypoint.new(label, xCoord, yCoord, zCoord)
+    else
+        local currentLocation = turtle.getlocation()
+        result = waypoint.new(label, currentLocation.x, currentLocation.y, currentLocation.z)
+    end
+    _waypoints.add(result)
+    return result
+end
 
-    function self.setWaypoint(label, xCoord, yCoord, zCoord)
-        local result
-        if xCoord and yCoord and zCoord then
-            result = waypoint.new(label, xCoord, yCoord, zCoord)
+function turtle.removeWaypoint(label)
+    _waypoints.remove(label)
+end
+
+function turtle.howFar(...)
+    local args = { ... }
+    if #args == 1 then
+        wp = args[1]
+        if type(wp) == "table" then
+            return _waypoints.howFar(wp)
         else
-            local currentLocation = terpInstance.getlocation()
-            result = waypoint.new(label, currentLocation.x, currentLocation.y, currentLocation.z)
+            return _waypoints.howFar(_waypoints.get(wp))
         end
-        _waypoints.add(result)
-        return result
+    elseif #args == 3 then
+        return _howFar(args[1], args[2], args[3])
+    else
+        error("howFar takes one waypoint name argument or separate x, y, z arguments")
     end
+end
 
-    function self.removeWaypoint(label)
-        _waypoints.remove(label)
-    end
-
-    function self.howFar(...)
-        local args = { ... }
-        if #args == 1 then
-            wp = args[1]
-            if type(wp) == "table" then
-                return _waypoints.howFar(wp)
-            else
-                return _waypoints.howFar(_waypoints.get(wp))
-            end
-        elseif #args == 3 then
-            return _howFar(args[1], args[2], args[3])
-        else
-            error("howFar takes one waypoint name argument or separate x, y, z arguments")
+function turtle.followWaypointsTo(to)
+    local route = _waypoints.findRoute(to)
+    for i = 1, #route do
+        if not turtle.moveTo(route[i].x, route[i].y, route[i].z) then
+            return false
         end
+        _waypoints.add(route[i])
     end
-
-    function self.followWaypointsTo(to)
-        local route = _waypoints.findRoute(to)
-        for i = 1, #route do
-            if not terpInstance.moveTo(route[i].x, route[i].y, route[i].z) then
-                return false
-            end
-            _waypoints.add(route[i])
-        end
-        return true
-    end
-
-    terpInstance.extend(self)
-
+    return true
 end
 
 

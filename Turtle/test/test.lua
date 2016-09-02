@@ -8,11 +8,27 @@ end
 os.loadAPI("testCommon")
 testCommon.reloadAPI("turtle", "test/mocks/turtle")
 
+local detailed, quiet
 local args = { ... }
 local filespec = "./*"
-if #args > 0 then
-    filespec = args[1]
+for i=1, #args do
+  if string.sub(args[i], 1, 1) == "-" then
+    local switch = string.lower(string.sub(args[i], 2))
+    while string.sub(switch, 1, 1) == "-" do
+      switch = string.sub(switch, 2)
+    end
+    if switch == "detailed" or switch == "d" or switch == "v" or switch =="verbose" then
+      detailed = true
+    elseif switch == "q" or switch == "quiet" then
+      quiet = true
+    end
+  else
+    filespec = args[i]
+  end
 end
+
+assert(not (detailed and quiet), "Pick one, detailed or quiet; you can't have it both ways.")
+
 local files = fs.find(filespec)
 local results = {}
 local totals = {}
@@ -43,7 +59,9 @@ for i=1, #files do
                   totals[api].passed = totals[api].passed + 1
               end
 
-              print(string.format("  %s%s [%s]%s", name, string.rep(" ", maxlength - string.len(name)), result and "passed" or "FAILED", result and "" or ": "..err))
+              if detailed or not result then
+                print(string.format("  %s%s [%s]%s", name, string.rep(" ", maxlength - string.len(name)), result and "passed" or "FAILED", result and "" or ": "..err))
+              end
           end
       end
 

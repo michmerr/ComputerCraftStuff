@@ -38,6 +38,7 @@ function turtle.detectBack()
 end
 
 local function move(moveFunc, detectFunc, digFunc, attackFunc)
+  local counter = 0
   if detectFunc() then
     if not digFunc() then
       return false
@@ -49,10 +50,16 @@ local function move(moveFunc, detectFunc, digFunc, attackFunc)
         return false
       end
     elseif not attackFunc() then
+      if counter > 10 then
+        -- something's wrong
+        print("Movement after negative detect failed after "..counter.." attempts")
+        return false
+      end
       -- falling block after previous dig
       os.sleep(0.2)
     end
   end
+  return true
 end
 
 local function place(placeFunc, detectFunc, attackFunc)
@@ -85,11 +92,11 @@ function turtle.placeDown()
 end
 
 function turtle.placeUp()
-  return place(base.placeUp, base.detectDown, base.attackUp)
+  return place(base.placeUp, base.detectUp, base.attackUp)
 end
 
 function turtle.forward()
-  return move(base.forward, base.detect, turtle, dig, base.attack)
+  return move(base.forward, base.detect, turtle.dig, base.attack)
 end
 
 function turtle.back()

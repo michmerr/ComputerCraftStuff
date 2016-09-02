@@ -6,6 +6,7 @@ local files = {
     { id = "ujCGgT4B"; filename = "emod" };
     { id = "fVQkNm3s"; filename = "itemType" };
     { id = "eeW1P5yn"; filename = "itemTypeCollection" };
+    { id = "qsgcmCc5"; filename = "itemTypeData" };
     { id = "0HTvSbnR"; filename = "location" };
     { id = "XtKPTr8w"; filename = "matrix" };
     { id = "bjL3qwT3"; filename = "orientation" };

@@ -8,9 +8,9 @@ function new(label, x, y, z)
 
     local self = {
          ["label"] = label;
-         ["x"] = x;
-         ["y"] = y;
-         ["z"] = z;
+         ["x"] = x or 0;
+         ["y"] = y or 0;
+         ["z"] = z or 0;
          }
 
     return setmetatable(self, mt)

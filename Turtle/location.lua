@@ -46,7 +46,7 @@ function create(state)
 
   function self.getLocation()
     return {
-      attitude = getOrientationState();
+      attitude = self.getState();
       x = x;
       y = y;
       z = z
@@ -141,12 +141,15 @@ end
 
 function turtle.moveTo(x, y, z)
   local start = _location.getLocation()
-
+  local facing
   if type(x) == "table" then
     if x.x and x.y and x.z then
       y = x.y
       z = x.z
       x = x.x
+      if x.attitude then
+        facing = x.attitude
+      end
     elseif #x == 3 then
       y = x[2]
       z = x[3]
@@ -182,6 +185,11 @@ function turtle.moveTo(x, y, z)
   for i = 1, math.abs(dY) do
     verticalMove()
   end
+
+  if facing then
+    turtle.turnTo(facing)
+  end
+
 end
 
 -- endregion
