@@ -1,7 +1,5 @@
 -- region *.lua
 
--- Mock terp
-
 if not testCommon then
   os.loadAPI("./testCommon")
 end

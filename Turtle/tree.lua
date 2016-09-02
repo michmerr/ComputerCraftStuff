@@ -1,3 +1,7 @@
+--- scratchpad with blocks from two quick and dirty script written in the field
+--- will not run as is
+return false
+---
 
 local y1 = 0
 while not turtle.detectUp() do

@@ -1,4 +1,4 @@
-
+-- Quick hack of excavate to support up and down, specific depths, and digging above and below for block layers.
 local tArgs = { ... }
 if #tArgs > 2 then
 	print( "Usage: excavate <diameter> [depth]" )

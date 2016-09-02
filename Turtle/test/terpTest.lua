@@ -1,7 +1,5 @@
 --region *.lua
 --Date
---region *.lua
---Date
 
 if not testCommon then
     os.loadAPI("test/testCommon")
