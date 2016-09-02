@@ -3,19 +3,20 @@
 local githubUrl = "https://raw.githubusercontent.com/michmerr/ComputerCraftStuff/master/Turtle"
 
 local files = {
-  "test/inventoryTest";
-  "test/locationTest";
-  "test/orientationTest";
-  "test/stairsTest";
-  "test/terpCommandsTest";
-  "test/terpRefuelTest";
-  "test/terpTest";
-  "test/test";
-  "test/testCommon";
-  "test/waypointsTest";
-  "test/mocks/orientation";
-  "test/mocks/terp";
-  "test/mocks/turtle";
+  "/test/inventoryTest";
+  "/test/locationTest";
+  "/test/orientationTest";
+  "/test/stairsTest";
+  "/test/terpCommandsTest";
+  "/test/terpRefuelTest";
+  "/test/terpTest";
+  "/test/test";
+  "/test/testCommon";
+  "/test/waypointsTest";
+  "/test/mocks/orientation";
+  "/test/mocks/terp";
+  "/test/mocks/turtle";
+  "/bootstrap";
   "/compactor";
   "/e2";
   "/inventory";
@@ -29,7 +30,6 @@ local files = {
   "/terp";
   "/terpCommands";
   "/terpRefuel";
-  "/terpStairs";
   "/transfer";
   "/utilities";
   "/waypoint";
@@ -43,7 +43,12 @@ if args[1] and args[1] == "exec" then
     if (fs.exists(files[i])) then
       fs.delete(files[i])
     end
-    shell.run("wget", githubUrl..files[i]..".lua", files[i])
+    local dir = fs.getDir(files[i])
+    if not fs.exists(dir) then
+      fs.makeDir(dir)
+    end
+    shell.setDir(dir)
+    shell.run("wget", githubUrl..files[i]..".lua", fs.getName(files[i]))
   end
 else
 
