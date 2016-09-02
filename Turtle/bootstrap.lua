@@ -1,6 +1,6 @@
 -- region *.lua
 -- Date
-local githubUrl = "https://raw.githubusercontent.com/michmerr/ComputerCraftStuff/master"
+local githubUrl = "https://raw.githubusercontent.com/michmerr/ComputerCraftStuff/master/Turtle"
 
 local files = {
   "test/inventoryTest";
