@@ -43,7 +43,7 @@ if args[1] and args[1] == "exec" then
     if (fs.exists(files[i])) then
       fs.delete(files[i])
     end
-    local dir = fs.getDir(files[i])
+    local dir = fs.combine("/terp", fs.getDir(files[i]))
     if not fs.exists(dir) then
       fs.makeDir(dir)
     end

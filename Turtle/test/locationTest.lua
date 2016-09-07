@@ -90,7 +90,10 @@ end
 function _testLocationHelper(target, x, y, z)
   local globalMockOrientationData = orientation.getMockData()
   local instanceMockData = globalMockOrientationData.instances[#globalMockOrientationData.instances]
-  instanceMockData.expected.getState = { { x; y; z } }
+  if not instanceMockData.expected.getState then
+    instanceMockData.expected.getState = { }
+  end
+  table.insert(instanceMockData.expected.getState, { { x; y; z } })
   local actual = target.getLocation()
   assert((actual.x == x and actual.y == y and actual.z == z), string.format("Expected %d, %d, %d; Actual %d, %d, %d", x, y, z, actual.x, actual.y, actual.z))
   return true
@@ -105,7 +108,7 @@ function testGetLocationAfterSimpleMove()
   local target = location.create()
   local globalMockOrientationData = orientation.getMockData()
   local instanceMockData = globalMockOrientationData.instances[#globalMockOrientationData.instances]
-  instanceMockData.expected.getState = { { } }
+  instanceMockData.expected.getState = { { { 1, 0, 0 }; {0, 1, 0 }; { 0, 0, 1 } }; }
   instanceMockData.expected.translateForward = { { 0; 0; 1 } }
   target.moveForward()
   _testLocationHelper(target, 0, 0, 1)
@@ -143,10 +146,6 @@ end
 
 function testHowFarRelative2()
   _testHowFarHelper(10, -9, 0, 16, 4, 9)
-end
-
-function testDecorate()
-  assert(false, "TODO")
 end
 
 -- endregion

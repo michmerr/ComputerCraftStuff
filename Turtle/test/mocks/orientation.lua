@@ -1,122 +1,59 @@
 -- region *.lua
 -- Date
-local mockData = { calls = { }; expected = { }; instances = { } }
+local mockData = { nextInstance = { }; calls = { }; expected = { }; instances = { } }
+local simpleFunctions = { "getState", "yawRight", "yawLeft", "pitchUp", "pitchDown", "rollRight", "rollLeft", "getFacing" }
+local unpackFunctions = { "translateForward", "translateBackward", "translateUp", "translateDown", "translateLeft", "translateRight" }
 
 function getMockData()
   return mockData
 end
 
+local function simple(name, instanceData)
+  instanceData.indices[name] = instanceData.indices[name] + 1
+  table.insert(instanceData.calls, name)
+  assert(instanceData.expected[name], "No calls to "..name.."() were expected.")
+  assert(#instanceData.expected[name] >= instanceData.indices[name], string.format("Fewer calls (%d) were expected to %s.", #instanceData.expected[name], name))
+  return instanceData.expected[name][instanceData.indices[name]]
+end
+
 function create(...)
-  local instanceMockData = { calls = { }; expected = { }; }
+  local instanceMockData = { calls = { }; expected = { }; indices = { } }
+  if mockData.nextInstance and mockData.nextInstance.expected then
+    instanceMockData.expected = mockData.nextInstance.expected
+    mockData.nextInstance.expected = nil
+  end
+
   local self = { }
-  local args = { ...}
-  self.attitude = args[1] or   {
+  local args = { ... }
+  self.attitude = args[1] or {
             { 1; 0; 0 };
             { 0; 1; 0 };
             { 0; 0; 1 }
         }
 
-  local getStateIndex = 0
-  function self.getState()
-    getStateIndex = getStateIndex + 1
-    table.insert(instanceMockData.calls, "getState")
-    return instanceMockData.expected.getState[getStateIndex]
+  assert(not args[1] or (type(args[1]) == "table" and #args[1] == 3), "Expected a nil or matrix table as create argument.")
+  if args[1] then
+    for i = 1, #args[1] do
+      assert(args[1][i] and type(args[1][i]) == "table" and #args[1][i] == 3, "Expected 3-element list at row "..tostring(i))
+    end
   end
 
-  local yawRightIndex = 0
-  function self.yawRight()
-    yawRightIndex = yawRightIndex + 1
-    table.insert(instanceMockData.calls, "yawRight")
-    return instanceMockData.expected.yawRight[yawRightIndex]
+  for i = 1, #simpleFunctions do
+    local name = simpleFunctions[i]
+    instanceMockData.indices[name] = 0
+    self[name] =
+      function()
+        return simple(name, instanceMockData)
+      end
   end
 
-  local yawLeftIndex = 0
-  function self.yawLeft()
-    yawLeftIndex = yawLeftIndex + 1
-    table.insert(instanceMockData.calls, "yawLeft")
-    return instanceMockData.expected.yawLeft[yawLeftIndex]
-  end
-
-  local pitchUpIndex = 0
-  function self.pitchUp()
-    pitchUpIndex = pitchUpIndex + 1
-    table.insert(instanceMockData.calls, "pitchUp")
-    return instanceMockData.expected.pitchUp[pitchUpIndex]
-  end
-
-  local pitchDownIndex = 0
-  function self.pitchDown()
-    pitchDownIndex = pitchDownIndex + 1
-    table.insert(instanceMockData.calls, "pitchDown")
-    return instanceMockData.expected.pitchDown[pitchDownIndex]
-  end
-
-  local rollRightIndex = 0
-  function self.rollRight()
-    rollRightIndex = rollRightIndex + 1
-    table.insert(instanceMockData.calls, "rollRight")
-    return instanceMockData.expected.rollRight[rollRightIndex]
-  end
-
-  local rollLeftIndex = 0
-  function self.rollLeft()
-    rollLeftIndex = rollLeftIndex + 1
-    table.insert(instanceMockData.calls, "rollLeft")
-    return instanceMockData.expected.rollLeft[rollLeftIndex]
-  end
-
-  local function translate(value)
-    return value
-  end
-
-  local getFacingIndex = 0
-  function self.getFacing()
-    getFacingIndex = getFacingIndex + 1
-    table.insert(instanceMockData.calls, "getFacing")
-    return table.unpack(instanceMockData.expected.translateForward[getFacingIndex])
-  end
-
-  local translateForwardIndex = 0
-  function self.translateForward()
-    translateForwardIndex = translateForwardIndex + 1
-    table.insert(instanceMockData.calls, "translateForward")
-    return table.unpack(instanceMockData.expected.translateForward[translateForwardIndex])
-  end
-
-  local translateBackwardIndex = 0
-  function self.translateBackward()
-    translateBackwardIndex = translateBackwardIndex + 1
-    table.insert(instanceMockData.calls, "translateBackward")
-    return table.unpack(instanceMockData.expected.translateBackward[translateBackwardIndex])
-  end
-
-  local translateUpIndex = 0
-  function self.translateUp()
-    translateUpIndex = translateUpIndex + 1
-    print("runtimeMockOrientationData" .. tostring(instanceMockData))
-    table.insert(instanceMockData.calls, "translateUp")
-    return table.unpack(instanceMockData.expected.translateUp[translateUpIndex])
-  end
-
-  local translateDownIndex = 0
-  function self.translateDown()
-    translateDownIndex = translateDownIndex + 1
-    table.insert(instanceMockData.calls, "translateDown")
-    return table.unpack(instanceMockData.expected.translateDown[translateDownIndex])
-  end
-
-  local translateLeftIndex = 0
-  function self.translateLeft()
-    translateLeftIndex = translateLeftIndex + 1
-    table.insert(instanceMockData.calls, "translateLeft")
-    return table.unpack(instanceMockData.expected.translateLeft[translateLeftIndex])
-  end
-
-  local translateRightIndex = 0
-  function self.translateRight()
-    translateRightIndex = translateRightIndex + 1
-    table.insert(instanceMockData.calls, "translateRight")
-    return table.unpack(instanceMockData.expected.translateRight[translateRightIndex])
+  for i = 1, #unpackFunctions do
+    local name = unpackFunctions[i]
+    instanceMockData.indices[name] = 0
+    self[name] =
+      function()
+        return table.unpack(simple(name, instanceMockData))
+      end
   end
 
   function getMockData()

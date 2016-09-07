@@ -1,8 +1,14 @@
---region *.lua
---Date
+-- region *.lua
+-- Date
+
+local directions = {
+  forward = { name = "forward"; detect = "detect"; attack = "attack"; dig = "dig"; place = "place"; inspect = "inspect" };
+  up = { name = "up"; detect = "detectUp"; attack = "attackUp"; dig = "digUp"; place = "placeUp"; inspect = "inspectUp" };
+  down = { name = "down"; detect = "detectDown"; attack = "attackDown"; dig = "digDown"; place = "placeDown"; inspect = "inspectDown" };
+}
 
 if not testCommon then
-    os.loadAPI("test/testCommon")
+  os.loadAPI("test/testCommon")
 end
 
 function init()
@@ -14,7 +20,7 @@ function stackToString(list)
   local result
 
   for i = 1, #list do
-    result = result and result..", "..list[i] or list[i]
+    result = result and result .. ", " .. list[i] or list[i]
   end
 
   return result
@@ -22,300 +28,334 @@ end
 
 function evaluateMockData(expected)
   local actual = turtle.getMockData()
-  assert(#actual.calls, #expected, "Call counts did not match: Expected: "..stackToString(expected).."  Actual: "..stackToString(actual.calls))
+  assert(#actual.calls, #expected, "Call counts did not match: Expected: " .. stackToString(expected) .. "  Actual: " .. stackToString(actual.calls))
   for i = 1, #expected do
-    assert(expected[i] == actual.calls[i], "Value mismatch at index "..tostring(i)..".  Expected: "..stackToString(expected).."  Actual: "..stackToString(actual.calls))
+    assert(expected[i] == actual.calls[i], "Value mismatch at index " .. tostring(i) .. ".  Expected: " .. stackToString(expected) .. "  Actual: " .. stackToString(actual.calls))
   end
   return true
 end
 
 function testTurnAround()
-    init()
-    local mockData = turtle.getMockData()
-    mockData.expected.turnRight = { true; true }
-    local actual = turtle.turnAround()
-    assert(actual, "Expected true result, actual: "..tostring(actual).." ,  turtle calls: "..stackToString(mockData.calls))
-    local expected = { "turnRight", "turnRight" }
-    evaluateMockData(expected)
-    return true
+  init()
+  local mockData = turtle.getMockData()
+  mockData.expected.turnRight = { true; true }
+  local actual = turtle.turnAround()
+  assert(actual, "Expected true result, actual: " .. tostring(actual) .. " ,  turtle calls: " .. stackToString(mockData.calls))
+  local expected = { "turnRight", "turnRight" }
+  evaluateMockData(expected)
+  return true
 end
 
 function testDetectRight()
-    init()
-    local mockData = turtle.getMockData()
-    mockData.expected.turnRight = { true }
-    mockData.expected.turnLeft = { true }
-    mockData.expected.detect = { true }
-    local actual = turtle.detectRight()
-    assert(actual, "Expected true result, actual: "..tostring(actual).." , turtle calls: "..stackToString(mockData.calls))
-    local expected = { "turnRight", "detect", "turnLeft" }
-    evaluateMockData(expected)
-    return true
+  init()
+  local mockData = turtle.getMockData()
+  mockData.expected.turnRight = { true }
+  mockData.expected.turnLeft = { true }
+  mockData.expected.detect = { true }
+  local actual = turtle.detectRight()
+  assert(actual, "Expected true result, actual: " .. tostring(actual) .. " , turtle calls: " .. stackToString(mockData.calls))
+  local expected = { "turnRight", "detect", "turnLeft" }
+  evaluateMockData(expected)
+  return true
 end
 
 function testDetectLeft()
-    init()
-    local mockData = turtle.getMockData()
-    mockData.expected.turnLeft = { true }
-    mockData.expected.turnRight = { true }
-    mockData.expected.detect = { true }
-    local actual = turtle.detectLeft()
-    assert(actual, "Expected true result, actual: "..tostring(actual).." , turtle calls: "..stackToString(mockData.calls))
-    local expected = { "turnLeft", "detect", "turnRight" }
-    evaluateMockData(expected)
-    return true
+  init()
+  local mockData = turtle.getMockData()
+  mockData.expected.turnLeft = { true }
+  mockData.expected.turnRight = { true }
+  mockData.expected.detect = { true }
+  local actual = turtle.detectLeft()
+  assert(actual, "Expected true result, actual: " .. tostring(actual) .. " , turtle calls: " .. stackToString(mockData.calls))
+  local expected = { "turnLeft", "detect", "turnRight" }
+  evaluateMockData(expected)
+  return true
 end
 
 function testDetectBack()
-    init()
-    local mockData = turtle.getMockData()
-    mockData.expected.turnRight = { true; true; true; true }
-    mockData.expected.detect = { true }
-    local actual = turtle.detectBack()
-    assert(actual, "Expected true result, actual: "..tostring(actual).." , turtle calls: "..stackToString(mockData.calls))
-    local expected = { "turnRight",  "turnRight", "detect", "turnRight", "turnRight" }
-    evaluateMockData(expected)
-    return true
+  init()
+  local mockData = turtle.getMockData()
+  mockData.expected.turnRight = { true; true; true; true }
+  mockData.expected.detect = { true }
+  local actual = turtle.detectBack()
+  assert(actual, "Expected true result, actual: " .. tostring(actual) .. " , turtle calls: " .. stackToString(mockData.calls))
+  local expected = { "turnRight", "turnRight", "detect", "turnRight", "turnRight" }
+  evaluateMockData(expected)
+  return true
 end
 
 function testBack()
-    init()
-    local mockData = turtle.getMockData()
-    mockData.expected.back = { true }
-    local actual = turtle.back()
-    assert(actual, "Expected true result, actual: "..tostring(actual).." , turtle.expected.back: "..tostring(#mockData.expected.back).." turtle calls: "..stackToString(mockData.calls))
-    local expected = { "back" }
-    evaluateMockData(expected)
-    return true
+  init()
+  local mockData = turtle.getMockData()
+  mockData.expected.back = { true }
+  local actual = turtle.back()
+  assert(actual, "Expected true result, actual: " .. tostring(actual) .. " , turtle.expected.back: " .. tostring(#mockData.expected.back) .. " turtle calls: " .. stackToString(mockData.calls))
+  local expected = { "back" }
+  evaluateMockData(expected)
+  return true
 end
 
 function testBackWithObstruction()
-    init()
-    local mockData = turtle.getMockData()
-    mockData.expected.back = { false }
-    mockData.expected.forward = { true }
-    mockData.expected.detect = { true }
-    mockData.expected.dig = { true }
-    mockData.expected.turnRight = { true; true; true; true }
-    local actual = turtle.back()
-    assert(actual, "Expected true result, actual: "..tostring(actual).." , turtle calls: "..stackToString(mockData.calls))
-    local expected = { "back", "turnRight", "turnRight", "detect", "dig", "forward", "turnRight", "turnRight" }
-    evaluateMockData(expected)
-    return true
+  init()
+  local mockData = turtle.getMockData()
+  mockData.expected.back = { false }
+  mockData.expected.forward = { false, true }
+  mockData.expected.detect = { true }
+  mockData.expected.dig = { true }
+  mockData.expected.turnRight = { true; true; true; true }
+  local actual = turtle.back()
+  assert(actual, "Expected true result, actual: " .. tostring(actual) .. " , turtle calls: " .. stackToString(mockData.calls))
+  local expected = { "back", "turnRight", "turnRight", "forward", "detect", "dig", "forward", "turnRight", "turnRight" }
+  evaluateMockData(expected)
+  return true
+end
+
+function _testMove(direction)
+  init()
+  local mockData = turtle.getMockData()
+  mockData.expected[direction.name] = { true }
+  local actual = turtle[direction.name]()
+  assert(actual, "Expected true result, actual: " .. tostring(actual) .. " , turtle calls: " .. stackToString(mockData.calls))
+  local expected = { direction.name }
+  evaluateMockData(expected)
+  return true
 end
 
 function testForward()
-    init()
-    local mockData = turtle.getMockData()
-    mockData.expected.forward = { true }
-    mockData.expected.detect = { false }
-    local actual = turtle.forward()
-    assert(actual, "Expected true result, actual: "..tostring(actual).." , turtle calls: "..stackToString(mockData.calls))
-    local expected = { "detect", "forward" }
-    evaluateMockData(expected)
-    return true
-end
-
-function testForwardWithBlock()
-    init()
-    local mockData = turtle.getMockData()
-    mockData.expected.forward = { true }
-    mockData.expected.detect = { true, false }
-    mockData.expected.dig = { true }
-    local actual = turtle.forward()
-    assert(actual, "Expected true result, actual: "..tostring(actual).." , turtle calls: "..stackToString(mockData.calls))
-    local expected = { "detect", "dig", "forward" }
-    evaluateMockData(expected)
-    return true
-end
-
-function testForwardWithFallingBlock()
-    init()
-    local mockData = turtle.getMockData()
-    mockData.expected.forward = { false, true }
-    mockData.expected.detect = { true, true }
-    mockData.expected.dig = { true, true }
-    local actual = turtle.forward()
-    assert(actual, "Expected true result, actual: "..tostring(actual).." , turtle calls: "..stackToString(mockData.calls))
-    local expected = { "detect", "dig", "forward", "detect", "dig", "forward" }
-    evaluateMockData(expected)
-    return true
-end
-
-function testForwardWithMob()
-    init()
-    local mockData = turtle.getMockData()
-    mockData.expected.forward = { false, true }
-    mockData.expected.detect = { false, false }
-    mockData.expected.attack = { true, false }
-    local actual = turtle.forward()
-    assert(actual, "Expected true result, actual: "..tostring(actual).." , turtle calls: "..stackToString(mockData.calls))
-    local expected = { "detect", "forward", "detect", "attack", "forward" }
-    evaluateMockData(expected)
-    return true
+  return _testMove(directions.forward)
 end
 
 function testUp()
-    init()
-    local mockData = turtle.getMockData()
-    mockData.expected.up = { true }
-    mockData.expected.detectUp = { false }
-    local actual = turtle.up()
-    assert(actual, "Expected true result, actual: "..tostring(actual).." , turtle calls: "..stackToString(mockData.calls))
-    local expected = { "detectUp", "up" }
-    evaluateMockData(expected)
-    return true
+  return _testMove(directions.up)
 end
 
 function testDown()
-    init()
-    local mockData = turtle.getMockData()
-    mockData.expected.down = { true }
-    mockData.expected.detectDown = { false }
-    local actual = turtle.down()
-    assert(actual, "Expected true result, actual: "..tostring(actual).." , turtle calls: "..stackToString(mockData.calls))
-    local expected = { "detectDown", "down" }
-    evaluateMockData(expected)
-    return true
+  return _testMove(directions.down)
+end
+
+function _testMoveWithBlock(direction)
+  init()
+  local mockData = turtle.getMockData()
+  mockData.expected[direction.name] = { false, true }
+  mockData.expected[direction.detect] = { true, false }
+  mockData.expected[direction.dig] = { true }
+  local actual = turtle[direction.name]()
+  assert(actual, "Expected true result, actual: " .. tostring(actual) .. " , turtle calls: " .. stackToString(mockData.calls))
+  local expected = { direction.name, direction.detect, direction.dig, direction.name }
+  evaluateMockData(expected)
+  return true
+end
+
+function testForwardWithBlock()
+  return _testMoveWithBlock(directions.forward)
+end
+
+function testUpWithBlock()
+  return _testMoveWithBlock(directions.up)
+end
+
+function testDownWithBlock()
+  return _testMoveWithBlock(directions.down)
+end
+
+function _testMoveWithFallingBlock(direction)
+  init()
+  local mockData = turtle.getMockData()
+  mockData.expected[direction.name] = { false, false, true }
+  mockData.expected[direction.detect] = { true, true }
+  mockData.expected[direction.dig] = { true, true }
+  local actual = turtle[direction.name]()
+  assert(actual, "Expected true result, actual: " .. tostring(actual) .. " , turtle calls: " .. stackToString(mockData.calls))
+  local expected = { direction.name, direction.detect, direction.dig, direction.name, direction.detect, direction.dig, direction.name }
+  evaluateMockData(expected)
+  return true
+end
+
+function testForwardWithFallingBlock()
+  return _testMoveWithFallingBlock(directions.forward)
+end
+
+function testUpWithFallingBlock()
+  return _testMoveWithFallingBlock(directions.up)
+end
+
+function testDownWithFallingBlock()
+  return _testMoveWithFallingBlock(directions.down)
+end
+
+function _testMoveWithMob(direction)
+  init()
+  local mockData = turtle.getMockData()
+  mockData.expected[direction.name] = { false, true }
+  mockData.expected[direction.detect] = { false, false }
+  mockData.expected[direction.attack] = { true, false }
+  mockData.expected["getFuelLevel"] = { 100 }
+  local actual = turtle[direction.name]()
+  assert(actual, "Expected true result, actual: " .. tostring(actual) .. " , turtle calls: " .. stackToString(mockData.calls))
+  local expected = { direction.name, direction.detect, "getFuelLevel", direction.attack, direction.name }
+  evaluateMockData(expected)
+  return true
+end
+
+function testForwardWithMob()
+  return _testMoveWithMob(directions.forward)
+end
+
+function testUpWithMob()
+  return _testMoveWithMob(directions.up)
+end
+
+function testDownWithMob()
+  return _testMoveWithMob(directions.down)
+end
+
+function _testMoveWithNoFuel(direction)
+  init()
+  local mockData = turtle.getMockData()
+  mockData.expected[direction.name] = { false }
+  mockData.expected[direction.detect] = { false }
+  mockData.expected.getFuelLevel = { 0 }
+  local actual, err = turtle[direction.name]()
+  assert(not actual and err == terp.OUT_OF_FUEL, "Expected false result with error message, actual: " .. tostring(actual) .. ":" .. tostring(err) .. ", turtle calls: " .. stackToString(mockData.calls))
+  local expected = { direction.name, direction.detect, "getFuelLevel" }
+  evaluateMockData(expected)
+  return true
+end
+
+function testForwardWithNoFuel()
+  return _testMoveWithNoFuel(directions.forward)
+end
+
+function testUpWithNoFuel()
+  return _testMoveWithNoFuel(directions.up)
+end
+
+function testDownWithNoFuel()
+  return _testMoveWithNoFuel(directions.down)
 end
 
 function testRight()
-   init()
-    local mockData = turtle.getMockData()
-    mockData.expected.turnRight = { true }
-    mockData.expected.turnLeft = { true }
-    mockData.expected.detect = { false }
-    mockData.expected.forward = { true }
-    local actual = turtle.right()
-    assert(actual, "Expected true result, actual: "..tostring(actual).." , turtle calls: "..stackToString(mockData.calls))
-    local expected = { "turnRight", "detect", "forward", "turnLeft" }
-    evaluateMockData(expected)
-    return true
+  init()
+  local mockData = turtle.getMockData()
+  mockData.expected.turnRight = { true }
+  mockData.expected.turnLeft = { true }
+  mockData.expected.forward = { true }
+  local actual = turtle.right()
+  assert(actual, "Expected true result, actual: " .. tostring(actual) .. " , turtle calls: " .. stackToString(mockData.calls))
+  local expected = { "turnRight", "forward", "turnLeft" }
+  evaluateMockData(expected)
+  return true
 end
 
 function testRightMulti()
-   init()
-    local mockData = turtle.getMockData()
-    mockData.expected.turnRight = { true }
-    mockData.expected.turnLeft = { true }
-    mockData.expected.detect = { false, false, false }
-    mockData.expected.forward = { true, true, true }
-    local actual = turtle.right(3)
-    assert(actual, "Expected true result, actual: "..tostring(actual).." , turtle calls: "..stackToString(mockData.calls))
-    local expected = { "turnRight", "detect", "forward", "detect", "forward", "detect", "forward", "turnLeft" }
-    evaluateMockData(expected)
-    return true
+  init()
+  local mockData = turtle.getMockData()
+  mockData.expected.turnRight = { true }
+  mockData.expected.turnLeft = { true }
+  mockData.expected.forward = { true, true, true }
+  local actual = turtle.right(3)
+  assert(actual, "Expected true result, actual: " .. tostring(actual) .. " , turtle calls: " .. stackToString(mockData.calls))
+  local expected = { "turnRight", "forward", "forward", "forward", "turnLeft" }
+  evaluateMockData(expected)
+  return true
 end
 
 function testLeft()
-   init()
-    local mockData = turtle.getMockData()
-    mockData.expected.turnLeft = { true }
-    mockData.expected.turnRight = { true }
-    mockData.expected.detect = { false }
-    mockData.expected.forward = { true }
-    local actual = turtle.left()
-    assert(actual, "Expected true result, actual: "..tostring(actual).." , turtle calls: "..stackToString(mockData.calls))
-    local expected = { "turnLeft", "detect", "forward", "turnRight" }
-    evaluateMockData(expected)
-    return true
+  init()
+  local mockData = turtle.getMockData()
+  mockData.expected.turnLeft = { true }
+  mockData.expected.turnRight = { true }
+  mockData.expected.forward = { true }
+  local actual = turtle.left()
+  assert(actual, "Expected true result, actual: " .. tostring(actual) .. " , turtle calls: " .. stackToString(mockData.calls))
+  local expected = { "turnLeft", "forward", "turnRight" }
+  evaluateMockData(expected)
+  return true
 end
 
 function testLeftMulti()
-   init()
-    local mockData = turtle.getMockData()
-    mockData.expected.turnLeft = { true }
-    mockData.expected.turnRight = { true }
-    mockData.expected.detect = { false, false, false }
-    mockData.expected.forward = { true, true, true }
-    local actual = turtle.left(3)
-    assert(actual, "Expected true result, actual: "..tostring(actual).." , turtle calls: "..stackToString(mockData.calls))
-    local expected = { "turnLeft", "detect", "forward", "detect", "forward", "detect", "forward", "turnRight" }
-    evaluateMockData(expected)
-    return true
+  init()
+  local mockData = turtle.getMockData()
+  mockData.expected.turnLeft = { true }
+  mockData.expected.turnRight = { true }
+  mockData.expected.forward = { true, true, true }
+  local actual = turtle.left(3)
+  assert(actual, "Expected true result, actual: " .. tostring(actual) .. " , turtle calls: " .. stackToString(mockData.calls))
+  local expected = { "turnLeft", "forward", "forward", "forward", "turnRight" }
+  evaluateMockData(expected)
+  return true
+end
+
+function _testPlace(direction)
+  init()
+  local mockData = turtle.getMockData()
+  mockData.expected[direction.place] = { true }
+  mockData.expected[direction.detect] = { false }
+  local actual = turtle[direction.place]()
+  assert(actual, "Expected true result, actual: " .. tostring(actual) .. " , turtle calls: " .. stackToString(mockData.calls))
+  local expected = { direction.detect, direction.place }
+  evaluateMockData(expected)
+  return true
+end
+
+function _testPlaceBlocked(direction)
+  init()
+  local mockData = turtle.getMockData()
+  mockData.expected[direction.detect] = { true }
+  local actual = turtle[direction.place]()
+  assert(not actual, "Expected false result, actual: " .. tostring(actual) .. " , turtle calls: " .. stackToString(mockData.calls))
+  local expected = { direction.detect }
+  evaluateMockData(expected)
+  return true
+end
+
+function _testPlaceMob(direction)
+  init()
+  local mockData = turtle.getMockData()
+  mockData.expected[direction.place] = { false, true }
+  mockData.expected[direction.detect] = { false, false }
+  mockData.expected[direction.attack] = { true, false }
+  local actual = turtle[direction.place]()
+  assert(actual, "Expected true result, actual: " .. tostring(actual) .. " , turtle calls: " .. stackToString(mockData.calls))
+  local expected = { direction.detect, direction.place, direction.attack, direction.attack, direction.detect, direction.place }
+  evaluateMockData(expected)
+  return true
 end
 
 function testPlace()
-    init()
-    local mockData = turtle.getMockData()
-    mockData.expected.place = { true }
-    mockData.expected.detect = { false }
-    local actual = turtle.place()
-    assert(actual, "Expected true result, actual: "..tostring(actual).." , turtle calls: "..stackToString(mockData.calls))
-    local expected = { "detect", "place" }
-    evaluateMockData(expected)
-    return true
+  return _testPlace(directions.forward)
 end
 
 function testPlaceBlocked()
-    init()
-    local mockData = turtle.getMockData()
-    mockData.expected.detect = { true }
-    local actual = turtle.place()
-    assert(not actual, "Expected false result, actual: "..tostring(actual).." , turtle calls: "..stackToString(mockData.calls))
-    local expected = { "detect" }
-    evaluateMockData(expected)
-    return true
+  return _testPlaceBlocked(directions.forward)
 end
 
 function testPlaceMob()
-    init()
-    local mockData = turtle.getMockData()
-    mockData.expected.place = { false, true }
-    mockData.expected.detect = { false }
-    mockData.expected.attack = { true, false }
-    local actual = turtle.place()
-    assert(actual, "Expected true result, actual: "..tostring(actual).." , turtle calls: "..stackToString(mockData.calls))
-    local expected = { "detect", "place", "attack", "attack", "place" }
-    evaluateMockData(expected)
-    return true
+  return _testPlaceMob(directions.forward)
 end
 
 function testPlaceUp()
-    init()
-    local mockData = turtle.getMockData()
-    mockData.expected.placeUp = { true }
-    mockData.expected.detectUp = { false }
-    local actual = turtle.placeUp()
-    assert(actual, "Expected true result, actual: "..tostring(actual).." , turtle calls: "..stackToString(mockData.calls))
-    local expected = { "detectUp", "placeUp" }
-    evaluateMockData(expected)
-    return true
+  return _testPlace(directions.up)
 end
 
 function testPlaceUpBlocked()
-    init()
-    local mockData = turtle.getMockData()
-    mockData.expected.detectUp = { true }
-    local actual = turtle.placeUp()
-    assert(not actual, "Expected false result, actual: "..tostring(actual).." , turtle calls: "..stackToString(mockData.calls))
-    local expected = { "detectUp" }
-    evaluateMockData(expected)
-    return true
+  return _testPlaceBlocked(directions.up)
+end
+
+function testPlaceUpMob()
+  return _testPlaceMob(directions.up)
 end
 
 function testPlaceDown()
-    init()
-    local mockData = turtle.getMockData()
-    mockData.expected.placeDown = { true }
-    mockData.expected.detectDown = { false }
-    local actual = turtle.placeDown()
-    assert(actual, "Expected true result, actual: "..tostring(actual).." , turtle calls: "..stackToString(mockData.calls))
-    local expected = { "detectDown", "placeDown" }
-    evaluateMockData(expected)
-    return true
+  return _testPlace(directions.down)
 end
 
 function testPlaceDownBlocked()
-    init()
-    local mockData = turtle.getMockData()
-    mockData.expected.detectDown = { true }
-    local actual = turtle.placeDown()
-    assert(not actual, "Expected false result, actual: "..tostring(actual).." , turtle calls: "..stackToString(mockData.calls))
-    local expected = { "detectDown" }
-    evaluateMockData(expected)
-    return true
+  return _testPlaceBlocked(directions.down)
 end
 
+function testPlaceDownMob()
+  return _testPlaceMob(directions.down)
+end
 
---endregion
+-- endregion

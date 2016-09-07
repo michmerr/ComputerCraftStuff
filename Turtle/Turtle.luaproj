@@ -39,10 +39,12 @@
     <Compile Include="location.lua" />
     <Compile Include="test\locationTest.lua" />
     <Compile Include="matrix.lua" />
+    <Compile Include="test\mocks\location.lua" />
     <Compile Include="test\mocks\orientation.lua" />
     <Compile Include="test\mocks\terp.lua" />
     <Compile Include="orientation.lua" />
     <Compile Include="test\mocks\turtle.lua" />
+    <Compile Include="test\mocks\waypointCollection.lua" />
     <Compile Include="test\orientationTest.lua" />
     <Compile Include="rom\apis\os.lua" />
     <Compile Include="rom\apis\peripheral.lua" />

@@ -13,7 +13,9 @@ end
 
 if not fs.combine then
   function fs.combine( arg0, arg1 )
-    return ""
+    arg0 = string.sub(arg0, -1) ~= "/" and arg0 or string.sub(arg0, 1, -1)
+    arg0 = string.sub(arg1, 1, 1) ~= "/" and arg0 or string.sub(arg0, 2)
+    return arg0.."/"..arg1
   end
 end
 

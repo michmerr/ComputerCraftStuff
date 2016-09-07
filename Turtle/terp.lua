@@ -7,6 +7,11 @@ end
 
 local base = { }
 
+DIG_FAILED = "Block detected, but dig failed. Move aborted."
+OUT_OF_FUEL = "Out of fuel"
+MOVE_FAILED = "Movement after negative detect failed after %d attempts"
+PLACE_FAILED = "Place failed for unknown reason."
+
 -- Extend turtle
 for k, v in pairs(turtle) do
   base[k] = v
@@ -39,21 +44,17 @@ end
 
 local function move(moveFunc, detectFunc, digFunc, attackFunc)
   local counter = 0
-  if detectFunc() then
-    if not digFunc() then
-      return false
-    end
-  end
   while not moveFunc() do
     if detectFunc() then
       if not digFunc() then
-        return false
+        return false, DIG_FAILED
       end
+    elseif turtle.getFuelLevel() == 0 then
+      return false, OUT_OF_FUEL
     elseif not attackFunc() then
       if counter > 10 then
         -- something's wrong
-        print("Movement after negative detect failed after "..counter.." attempts")
-        return false
+        return false, string.format(MOVE_FAILED, counter)
       end
       -- falling block after previous dig
       os.sleep(0.2)
@@ -63,24 +64,24 @@ local function move(moveFunc, detectFunc, digFunc, attackFunc)
 end
 
 local function place(placeFunc, detectFunc, attackFunc)
-    if detectFunc() then
-        return false
-    end
-    if placeFunc() then
-      return true
-    end
+  if detectFunc() then
+      return false
+  end
 
-    if attackFunc() then
-        repeat
-            print("Mob blocking placement")
-        until not attackFunc()
-        print("Mob cleared")
-        if placeFunc() then
-            return true
-        end
-    end
-    return false
+  if placeFunc() then
+    return true
+  end
 
+  if not attackFunc() then
+    return false, PLACE_FAILED
+  end
+
+  while attackFunc() do
+    os.sleep(0.2)
+  end
+
+  -- in case mob changed environment (e.g. creeper explosion)
+  return place(placeFunc, detectFunc, attackFunc)
 end
 
 function turtle.place()
@@ -110,11 +111,11 @@ function turtle.back()
 end
 
 function turtle.up()
-  return move(base.up, base.detectUp, turtle, digUp, base.attackUp)
+  return move(base.up, base.detectUp, turtle.digUp, base.attackUp)
 end
 
 function turtle.down()
-  return move(base.down, base.detectDown, turtle, digDown, base.attackDown)
+  return move(base.down, base.detectDown, turtle.digDown, base.attackDown)
 end
 
 function turtle.right(distance)

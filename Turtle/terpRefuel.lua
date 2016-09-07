@@ -1,6 +1,9 @@
 -- region *.lua
 
-if not utilities then dofile("utilities") end
+if not utilities then
+  dofile("utilities")
+end
+
 if not terp then
   os.loadAPI("terp")
 end

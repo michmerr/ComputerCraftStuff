@@ -7,6 +7,9 @@ function reloadAPI(checkApi, loadApi)
         os.unloadAPI(checkApi)
     end
 
+    if not package then
+      loadApi = "/terp/"..loadApi
+    end
     os.loadAPI(loadApi)
 
 end
