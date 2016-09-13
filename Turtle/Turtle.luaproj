@@ -95,6 +95,7 @@
     <Compile Include="waypointCollection.lua" />
     <Compile Include="waypoint.lua" />
     <Compile Include="test\waypointsTest.lua" />
+    <Compile Include="wget.lua" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="rom\" />

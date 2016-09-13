@@ -33,6 +33,7 @@ function new()
 -- treadWidth, treadDepth, height, maxLength, maxWidth, measureOutside, clockwise, materialSlotRangeLow, materialSlotRangeHigh, materialTypes, intervalActions)
   local treadWidth = 1;
   local treadDepth = 1;
+  local ceiling = 3;
   local outside = true;
   local clockwise = true;
   local materialSlotRangeLow = 1;
@@ -87,6 +88,15 @@ function new()
   function self.setTreadDepth(value)
     assert(value and type(value) == "number" and value > 0, "value must be a positive number (value passed was "..tostring(value)..")")
     treadDepth = value
+  end
+
+  function self.getCeiling()
+    return ceiling
+  end
+
+  function self.setCeiling(value)
+    assert(value and type(value) == "number" and value > 1, "value must be a number, 2 or greater (value passed was "..tostring(value)..")")
+    ceiling = value
   end
 
   function self.getTurnOutside()
@@ -216,19 +226,23 @@ function new()
     if length == -1 and width == -1 then
       length = treadDepth * math.abs(height)
       width = treadWidth
-    -- If on or the other other is defined, then the undefined values indicates a switchback
-    elseif length == -1 then
-      length = outside and treadWidth * 2 or 0
-    elseif width == -1 then
-      length = outside and treadWidth * 2 or 0
-    end
+    -- If one or the other other is defined, then the undefined values indicates a switchback
+    else
+      if length == -1 then
+        length = outside and treadWidth * 2 or 0
+      elseif width == -1 then
+        length = outside and treadWidth * 2 or 0
+      end
 
-    -- if measuring the outside of turns, adjust lengths to allow for landings
-    if outside then
-      length = length - (2 * treadWidth)
-      width = width - (2 * treadWidth)
-      assert(length >= 0, "Defined length is insufficient to allow turns with the defined tread width.")
-      assert(width >= 0, "Defined width is insufficient to allow turns with the defined tread width.")
+      -- if measuring the outside of turns, adjust lengths to allow for landings
+      -- this effectively normalizes length and width for both outside and inside turns
+      -- to describe the distance between turns.
+      if outside then
+        length = length - (2 * treadWidth)
+        width = width - (2 * treadWidth)
+        assert(length >= 0, "Defined length is insufficient to allow turns with the defined tread width.")
+        assert(width >= 0, "Defined width is insufficient to allow turns with the defined tread width.")
+      end
     end
   end
 
@@ -302,19 +316,23 @@ function new()
     return true
   end
 
-  local function clearAirspace()
-    terp.digDown()
+  -- clear airspace. the move into position in the traverseStep scope clears the
+  -- the current spot, it creates a clean vertical space.
+  local function clearAirspace(count)
     terp.digUp()
+    terp.digDown()
   end
 
-  local function stepTraversal()
+  -- make a pass down the length of a step, performing a specified action.
+  -- interval actions will be offered a chance to trigger at each end of
+  -- the traversal.
+  local function traverseStep(action)
     runIntervalActions()
     if treadWidth > 1 then
       log(Logger.levels.DEBUG, "face down tread: %s", tostring(lateralDirection) )
       terp.turnTo(lateralDirection)
     end
 
-    local action = above and clearAirspace or layTread
     for i = 1, treadWidth do
       if i > 1 then
         log(Logger.levels.DEBUG, "move down tread")
@@ -323,6 +341,9 @@ function new()
       action()
     end
     if treadWidth > 1 then
+      -- if we're going back and forth, run the interval action again for this
+      -- side of the step. Doing it before the turn to face the next step since
+      -- most interval actions will turn to face an end if they trigger.
       runIntervalActions()
       changeLateralDirection()
       log(Logger.levels.DEBUG, "turn next: ")
@@ -330,13 +351,29 @@ function new()
     end
   end
 
-  local function step(depth, corner)
+  -- Increment counters referenced by incremental actions
+  -- tracks wall and edge distance travelled for things like
+  -- placing torches and railings.
+  local function updateIncrementalCounters(turningCorner)
+    if not turningCorner then
+      distance.wall = distance.wall + 1
+      distance.edge = distance.edge + 1
+    else
+      if outside then
+        distance.wall = distance.wall + 1
+      else
+        distance.edge = distance.edge + 1
+      end
+    end
+  end
 
-    log(Logger.levels.DEBUG, "step(depth = %s, corner = %s)", tostring(depth), tostring(corner))
+  -- carve out space and lay down tread for one step (treadWidth wide x treadDepth deep x 1 block high)
+  -- it moves into the new step's volume from the leading edge of the previous step, and ends on or above
+  -- the leading edge of the new step.
+  local function step(depth, turningCorner)
     count = count + 1
     depth = depth or treadDepth
 
-    log(Logger.levels.DEBUG, "step: depth = %s, count = %s)", tostring(depth), tostring(count))
     if stairsUp then
       move(terp.up)
     end
@@ -347,25 +384,20 @@ function new()
       if not stairsUp and i == 1 then
         move(terp.down)
       end
-
-      if not corner or outside then
-        distance.wall = distance.wall + 1
-      elseif not corner or not outside then
-        distance.edge = distance.edge + 1
-      end
-
-      stepTraversal()
+      updateIncrementalCounters(turningCorner)
 
       if above then
+        traverseStep(clearAirspace)
         move(terp.down)
         move(terp.down)
       else
+        traverseStep(layTread)
         move(terp.up)
         move(terp.up)
       end
       above = not above
 
-      stepTraversal()
+      traverseStep(above and clearAirspace or layTread)
     end
   end
 
@@ -434,13 +466,20 @@ function new()
     local activeLength = length
     while count < totalCount do
       flight(activeLength)
-      activeLength = activeLength == length and  width or length
+      -- if we are not done after that flight, turn the corner and continue.
       if count < totalCount then
+        -- swap between x and z axis for the turn
+        activeLength = activeLength == length and width or length
+
+        -- square landing (passing treadWidth overrides the default treadDepth)
         step(treadWidth)
+
+        -- adjust position and axis of action
         turnCorner()
       end
     end
 
+    -- land gently on the last step
     if above then
       terp.down()
       terp.down()

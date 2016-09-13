@@ -89,6 +89,18 @@ local function _place(placeFunc, detectFunc, attackFunc)
   return _place(placeFunc, detectFunc, attackFunc)
 end
 
+function dig()
+  return turtle.detect() and turtle.dig()
+end
+
+function digUp()
+  return turtle.detectUp() and turtle.digUp()
+end
+
+function digDown()
+  return turtle.detectDown() and turtle.digDown()
+end
+
 function place()
   return _place(turtle.place, turtle.detect, turtle.attack)
 end
