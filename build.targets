@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <ComputerCraftDeployTarget Condition="'$(ComputerCraftDeployTarget)'==''">$(ComputerCraftComputerPath)</ComputerCraftDeployTarget>
+    <BuildDependsOn>DeployLocal</BuildDependsOn>
+  </PropertyGroup>
+
+  <Target Name="DeployLocal" Condition="'$(Configuration)'=='Debug'">
+    <ItemGroup>
+      <DeploySourceFiles Include="@(Compile)" Condition="'%(Compile.Publish)'!='False'"/>
+      <DeployTargetFiles Include="@(DeploySourceFiles->'$(ComputerCraftDeployTarget)\%(RelativeDir)%(Filename)')" />
+    </ItemGroup>
+    <Copy SourceFiles="@(DeploySourceFiles)" DestinationFiles="@(DeployTargetFiles)" SkipUnchangedFiles="false" />
+  </Target>
+</Project>

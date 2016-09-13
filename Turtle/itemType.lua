@@ -2,7 +2,7 @@
 -- Date
 
 if not utilities then
-  dofile("utilities")
+  dofile("/terp/utilities")
 end
 
 local itemTypeBase = { }
@@ -21,7 +21,15 @@ function new(o)
     damage = "";
     compactRecipe = COMPACT_NONE;--- bit pattern of what arrangement of this item type results in a "compacted" output
   }
+  if o and not o.fullname then
+    self.fullname = string.format("%s:%s", self.namespace, self.name)
+  end
+
   return setmetatable(self, mt)
+end
+
+function isa(o)
+  return getmetatable(o) == mt
 end
 
 function deserialize(itemString)

@@ -17,7 +17,7 @@ end
 function testGetFacing()
   local target = orientation.create()
   local facing = target.getFacing()
-  assert(facing.x == 0 and facing.y == 0 and facing.z == 1, string.format("Expected 0, 0, 1; Actual %d, %d, %d", facing.x, facing.y, facing.z))
+  assert(facing == orientation.transforms.neutral, string.format("Expected %s; Actual %s", tostring(orientation.transforms.neutral), tostring(facing)))
 end
 
 local function compare(matrixA, matrixB)

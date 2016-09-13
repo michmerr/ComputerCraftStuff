@@ -1,19 +1,19 @@
 -- region *.lua
 
 if not utilities then
-  dofile("utilities")
+  dofile("/terp/utilities")
 end
 
 if not terp then
-  os.loadAPI("terp")
+  os.loadAPI("/terp/terp")
 end
 
 if not location then
-  os.loadAPI("location")
+  os.loadAPI("/terp/location")
 end
 
 if not waypoint then
-  os.loadAPI("waypointCollection")
+  os.loadAPI("/terp/waypointCollection")
 end
 
 function create(useInventory, minFuelForOperation, optimumTopOff, minFuelAfterReturn, fuelPoint, fuelPointSuckFunc)
@@ -109,42 +109,42 @@ end
 
 local base = { }
 
--- Extend turtle
-for k, v in pairs(turtle) do
+-- Extend terp
+for k, v in pairs(terp) do
   base[k] = v
 end
 
 local refuelConfig = create()
-turtle.refuelConfig = refuelConfig
+terp.refuelConfig = refuelConfig
 
-function turtle.refuelFromInventory(takeUntil)
-  local takeAmount = takeUntil - turtle.getFuelLevel()
+function terp.refuelFromInventory(takeUntil)
+  local takeAmount = takeUntil - terp.getFuelLevel()
   for slot = 1, 16 do
     if takeAmount <= 0 then
       break
     end
-    turtle.select(slot)
-    turtle.refuel(takeAmount)
-    takeAmount = takeUntil - turtle.getFuelLevel()
+    terp.select(slot)
+    terp.refuel(takeAmount)
+    takeAmount = takeUntil - terp.getFuelLevel()
   end
 end
 
 -- TODO move to inventory
 function returnItems(suckFunc, count)
-  if suckFunc == turtle.suck then
-    return turtle.drop(count)
-  elseif suckFunc == turtle.suckDown then
-    return turtle.dropDown(count)
-  elseif suckFunc == turtle.suckUp then
-    return turtle.dropUp(count)
+  if suckFunc == terp.suck then
+    return terp.drop(count)
+  elseif suckFunc == terp.suckDown then
+    return terp.dropDown(count)
+  elseif suckFunc == terp.suckUp then
+    return terp.dropUp(count)
   end
 
   print("Not sure what reciprocal drop function is for "..tostring(suckFunc))
   return false
 end
 
-function turtle.tryPullFuel(suckFunc)
-  suckFunc = suckFunc or turtle.refuelConfig.suckFunc
+function terp.tryPullFuel(suckFunc)
+  suckFunc = suckFunc or terp.refuelConfig.suckFunc
   if not suckFunc then
     return false
   end
@@ -152,139 +152,139 @@ function turtle.tryPullFuel(suckFunc)
   local activeSlot = 0
   local counts = { }
   for i = 1, 16 do
-    table.insert(counts, turtle.getItemCount(i))
+    table.insert(counts, terp.getItemCount(i))
   end
 
   for i = 1, 16 do
     if counts[i] == 0 then
-      turtle.select(i)
+      terp.select(i)
       activeSlot = i
       break
     end
   end
 
-  if turtle.getItemCount() > 0 then
+  if terp.getItemCount() > 0 then
     print("No empty slots for fuel")
     return false
   end
 
-  while turtle.getFuelLevel() < turtle.refuelConfig.getTakeFuelUntilLevel() and suckFunc(1) do
-    if not turtle.refuel() then
-      print("item pulled from fuel point was not usable as fuel:" .. turtle.getItemDetail().name)
+  while terp.getFuelLevel() < terp.refuelConfig.getTakeFuelUntilLevel() and suckFunc(1) do
+    if not terp.refuel() then
+      print("item pulled from fuel point was not usable as fuel:" .. terp.getItemDetail().name)
       returnItems(suckFunc, 1)
       return false
     end
   end
 end
 
-function turtle.waitForRefueling()
+function terp.waitForRefueling()
   -- operational minimum, plus fuel to get there and back
-  local minFuel = turtle.refuelConfig.getWaitForFuelLevel() + turtle.howFar(turtle.refuelConfig.getFuelPointLocation()) + turtle.refuelConfig.getFuelSafetyMargin()
+  local minFuel = terp.refuelConfig.getWaitForFuelLevel() + terp.howFar(terp.refuelConfig.getFuelPointLocation()) + terp.refuelConfig.getFuelSafetyMargin()
 
-  if minFuel > turtle.getFuelLimit() then
-    minFuel = turtle.getFuelimit()
+  if minFuel > terp.getFuelLimit() then
+    minFuel = terp.getFuelimit()
   end
 
   local fuelLevel = 0
 
   -- optimistically planning on getting the optimum fuel level
-  while fuelLevel < turtle.refuelConfig.getTakeFuelUntilLevel() do
+  while fuelLevel < terp.refuelConfig.getTakeFuelUntilLevel() do
 
     tryPullFuel()
-    fuelLevel = turtle.getFuelLevel()
+    fuelLevel = terp.getFuelLevel()
     -- wait for manual refuel
     if (utilities.waitForEvent(5, { "turtle_inventory" })) then
-      refuelFromInventory(turtle.refuelConfig.takeFuelUntilLevel())
+      refuelFromInventory(terp.refuelConfig.takeFuelUntilLevel())
     end
     os.sleep(3)
     -- Wait for the inventory events and fuel level changes to stop, to allow
     -- for manual addition of multiple fuel items and/or a charging station to
     -- continue charging. The inventory check
 
-    if turtle.getFuelLevel() > minFuel and turtle.getFuelLevel() == fuelLevel then
+    if terp.getFuelLevel() > minFuel and terp.getFuelLevel() == fuelLevel then
       break
     end
   end
 end
 
 -- returns fuel temaining before return to the waypoint would be required
-function turtle.checkBingo(safetyMargin, waypoint)
+function terp.checkBingo(safetyMargin, waypoint)
   if not safetyMargin then
-    safetyMargin = turtle.refuelConfig.getFuelSafetyMargin()
+    safetyMargin = terp.refuelConfig.getFuelSafetyMargin()
   end
 
   safetyMargin = safetyMargin >= 0 and safetyMargin or 0
 
   if not waypoint then
-    waypoint = turtle.refuelConfig.getFuelPointLocation()
+    waypoint = terp.refuelConfig.getFuelPointLocation()
   end
 
-  local distance = turtle.howFar(waypoint)
+  local distance = terp.howFar(waypoint)
   local bingoFuel = distance + safetyMargin
-  return turtle.getFuelLevel() - bingoFuel
+  return terp.getFuelLevel() - bingoFuel
 end
 
-function turtle.useRefuelingPoint()
-  turtle.refuelConfig.setRefueling(true)
-  local returnTo = turtle.setWaypoint("resumeWork")
-  if not turtle.followWaypointsTo(turtle.refuelConfig.getFuelPointLocation()) then
+function terp.useRefuelingPoint()
+  terp.refuelConfig.setRefueling(true)
+  local returnTo = terp.setWaypoint("resumeWork")
+  if not terp.followWaypointsTo(terp.refuelConfig.getFuelPointLocation()) then
     return false
   end
-  if not turtle.waitForRefueling() then
+  if not terp.waitForRefueling() then
     return false
   end
 
-  if not turtle.followWaypointsTo(returnTo) then
+  if not terp.followWaypointsTo(returnTo) then
     return false
   end
-  turtle.removeWaypoint(returnTo)
+  terp.removeWaypoint(returnTo)
 
-  turtle.refuelConfig.setRefueling(false)
+  terp.refuelConfig.setRefueling(false)
   return true
 end
 
-function turtle.triggerRefuel()
-  if turtle.refuelConfig.getRefueling() then
+function terp.triggerRefuel()
+  if terp.refuelConfig.getRefueling() then
     return true
   end
-  local bingo = turtle.checkBingo()
+  local bingo = terp.checkBingo()
   if bingo > 0 then
     return true
   end
-  if turtle.refuelConfig.getTakeFuelFromInventory() then
-    refuelFromInventory(turtle.refuelConfig.getTakeFuelUntilLevel())
-    if turtle.checkBingo() > 0 then
+  if terp.refuelConfig.getTakeFuelFromInventory() then
+    refuelFromInventory(terp.refuelConfig.getTakeFuelUntilLevel())
+    if terp.checkBingo() > 0 then
       return true
     end
   end
 
-  return turtle.useRefuelingPoint()
+  return terp.useRefuelingPoint()
 end
 
-function turtle.forward()
-  if not turtle.triggerRefuel() then
+function terp.forward()
+  if not terp.triggerRefuel() then
     return false
   end
   return base.forward()
 end
 
 
-function turtle.up()
-  if not turtle.triggerRefuel() then
+function terp.up()
+  if not terp.triggerRefuel() then
     return false
   end
   return base.up()
 end
 
-function turtle.down()
-  if not turtle.triggerRefuel() then
+function terp.down()
+  if not terp.triggerRefuel() then
     return false
   end
   return base.down()
 end
 
-function turtle.back()
-  if not turtle.triggerRefuel() then
+function terp.back()
+  if not terp.triggerRefuel() then
     return false
   end
   return base.back()

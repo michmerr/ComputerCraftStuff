@@ -1,10 +1,19 @@
 -- region *.lua
 -- Date
+if not itemType then
+  os.loadAPI("terp/itemType")
+end
+
 local itemTypeCollectionBase = { }
 local mt = { __index = itemTypeCollectionBase }
 
 function new(list)
-  local self = list or { }
+  local self = { }
+  if list then
+    for i = 1, #list do
+      table.insert(self, itemType.new(list[i]))
+    end
+  end
   return setmetatable(self, mt)
 end
 
@@ -15,16 +24,27 @@ function load(filename)
   return new(list)
 end
 
+function itemTypeCollectionBase:where(test)
+  assert(test, "Expected a function taking an itemType as an argument")
+  local result = { }
+  for i = 1, #self do
+    if test(self[i]) then
+      table.insert(result, self[i])
+    end
+  end
+  return new(result)
+end
+
 function itemTypeCollectionBase:get(item)
   if type(item) == "table" then
     for i = 1, #self do
-      if self[i].equals(item) then
+      if self[i]:equals(item) then
         return self[i]
       end
     end
   elseif type(item) == "string" then
     for i = 1, #self do
-      if self[i].getId() == item then
+      if self[i]:getId() == item then
         return self[i]
       end
     end
@@ -32,6 +52,21 @@ function itemTypeCollectionBase:get(item)
     return self[item]
   end
   return nil
+end
+
+function itemTypeCollectionBase:add(item)
+  if type(item) == "table" then
+    if item.getId then
+      table.insert(self, item)
+    else
+      table.insert(self, itemType.new(item))
+    end
+  elseif type(item) == "string" then
+    table.insert(self, itemType.deserialize(item))
+  else
+    return false
+  end
+  return true
 end
 
 function itemTypeCollectionBase:remove(item)
@@ -42,7 +77,7 @@ function itemTypeCollectionBase:remove(item)
   local id
   if type(item) == "table" then
     if item.getId then
-      id = item.getId()
+      id = item:getId()
     elseif item.name and item.damage then
       id = item.name .. ":" .. item.damage
     end
@@ -53,7 +88,7 @@ function itemTypeCollectionBase:remove(item)
   if id then
     local index = -1
     for i = 1, #self do
-      if self[i].getId() == id then
+      if self[i]:getId() == id then
         index = i
         break
       end
@@ -67,13 +102,13 @@ function itemTypeCollectionBase:remove(item)
 end
 
 function itemTypeCollectionBase:contains(item)
-  return self.get(item) and true
+  return self:get(item) and true
 end
 
 function itemTypeCollectionBase:serialize()
   local result = "{\n"
-  for i = 1, self.count() do
-    result = result .. self.get(i).serialize() .. ";\n"
+  for i = 1, self:count() do
+    result = result .. self:get(i):serialize() .. ";\n"
   end
   result = result .. "}"
   return result;

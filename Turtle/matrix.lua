@@ -4,15 +4,21 @@ local matrixBase = { }
 local mt = { __index = matrixBase }
 
 function new(matrixArray)
-  local self = matrixArray or { }
-  return setmetatable(self, mt)
+  assert(matrixArray and type(matrixArray) == "table" and #matrixArray > 0, "an array of the matrix values must be passed to the constructor")
+  if getmetatable(matrixArray) == mt then
+    return matrixArray:clone()
+  end
+  return setmetatable(matrixArray, mt)
 end
 
 function matrixBase:multiply(m)
 
   assert(m, "matrix cannot be nil")
   assert(#m > 0, "matrix cannot be empty.")
-
+  --print(#self)
+  --print(tostring(self[1]))
+  --print(#self[1])
+  assert(#self > 0 and self[1], "comparing matrix must have at least one dimension: "..matrixBase.tostring(self))
   -- print("--------")
   -- print("Multiplying:")
   -- print(orientation.printMatrix(self))
@@ -21,7 +27,7 @@ function matrixBase:multiply(m)
   local result = { }
   local columnCount = #m[1]
   local rowCount = #m
-
+  --print(self[1])
   assert(#self[1] == rowCount, "The second matrix must have the same number of rows as the first matrix has columns.")
 
   for productRow = 1, rowCount do
@@ -43,13 +49,13 @@ end
 
 
 function matrixBase:tostring()
-  local max = self[1][1]
-  local min = self[1][1]
+  local max
+  local min
   for i = 1, #self do
-    max = math.max(max, table.unpack(self[i]))
-    min = math.min(min, table.unpack(self[i]))
+    max = max and math.max(max, table.unpack(self[i])) or table.unpack(self[i])
+    min = min and math.min(min, table.unpack(self[i])) or table.unpack(self[i])
   end
-  max = math.max(string.len(max), string.len(min))
+  max = math.max(string.len(max or 0), string.len(min or 0))
   local formatString = "%" .. max .. "d"
   local result = ""
   for i = 1, #self do
@@ -88,7 +94,7 @@ function matrixBase:clone()
     end
     table.insert(result, row)
   end
-  return result
+  return new(result)
 end
 
 mt.__eq = matrixBase.equals

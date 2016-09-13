@@ -3,7 +3,7 @@
 if require then
   require("matrix")
 else
-  os.loadAPI("matrix")
+  os.loadAPI("/terp/matrix")
 end
 
 
@@ -18,6 +18,11 @@ translations = {
 }
 
 transforms = {
+  ["neutral"] = matrix.new( {
+    { 1; 0; 0 };
+    { 0; 1; 0 };
+    { 0; 0; 1 }
+  } );
   ["yawRight"] = matrix.new( {
     { 0; 0; 1 };
     { 0; 1; 0 };
@@ -50,28 +55,29 @@ transforms = {
   } );
 }
 
+transforms.reverseYaw = transforms.yawLeft * transforms.yawLeft
+transforms.reversePitch = transforms.pitchDown * transforms.pitchDown
+transforms.reverseRoll = transforms.rollLeft * transforms.rollLeft
+
 function translate(from, to)
+  print("translate")
   local result = from * to
   return result[1][1], result[2][1], result[3][1]
 end
 
-function getFacing(from, to)
-  local fX, fY, fZ = translate(from, to)
-  return { x = fX; y = fY; z = fZ }
+function getRelative(fromOrientation, directionTransform)
+  directionTransform = directionTransform or transforms.neutral
+  return fromOrientation * directionTransform
 end
 
 function create(state)
 
-  local attitude = matrix.new(state or {
-    { 1; 0; 0 };
-    { 0; 1; 0 };
-    { 0; 0; 1 }
-  } )
+  local attitude = matrix.new(state or transforms.neutral)
 
   local self = { }
 
   function self.getState()
-    return attitude.clone()
+    return attitude:clone()
   end
 
   function self.yawRight()
@@ -107,9 +113,9 @@ function create(state)
     return translate(translations.forward)
   end
 
-  function self.getFacing()
-    local fX, fY, fZ = translate(translations.forward)
-    return { x = fX; y = fY; z = fZ }
+  -- Get vector components for a facing. If no direction is provided, forward is assumed.
+  function self.getFacing(translateDirection)
+    return orientation.getRelative(attitude, translateDirection)
   end
 
   function self.translateBackward()

@@ -13,8 +13,8 @@ os.loadAPI(fs.combine(root, "test/testCommon"))
 testCommon.reloadAPI("turtle", "test/mocks/turtle")
 
 local detailed, quiet
-local args = { ...}
-local filespec = "./*"
+local args = { ... }
+local filespec = "test/*"
 for i = 1, #args do
   if string.sub(args[i], 1, 1) == "-" then
     local switch = string.lower(string.sub(args[i], 2))
@@ -27,17 +27,18 @@ for i = 1, #args do
       quiet = true
     end
   else
-    filespec = args[i]
+    filespec = fs.combine("test", args[i])
   end
 end
 
 assert(not(detailed and quiet), "Pick one, detailed or quiet; you can't have it both ways.")
-
+print("find "..fs.combine(root, filespec))
 local files = fs.find(fs.combine(root, filespec))
 local results = { }
 local totals = { }
 
 for i = 1, #files do
+  -- print("Evaluating: " .. files[i])
   local api = fs.getName(files[i])
   if not fs.isDir(files[i]) and not(api == "test" or api == "test.lua" or api == "testCommon" or api == "testCommon.lua") then
     print("Testing: " .. api)

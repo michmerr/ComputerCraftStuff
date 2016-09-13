@@ -1,8 +1,16 @@
 -- region *.lua
 -- Date
 
+if not terp then
+  os.loadAPI("/terp/terp")
+end
+
 if not orientation then
-  os.loadAPI("orientation")
+  os.loadAPI("/terp/orientation")
+end
+
+if not Logger then
+  os.loadAPI("Logger")
 end
 
 function create(state)
@@ -64,82 +72,56 @@ end
 
 local _location = create()
 
-local function wrapMovementFunction(wrapFunc, locFunc)
+local function wrapMovementFunction(wrapFunc, locFunc, funcName)
   return function(...)
-    local result = wrapFunc(...)
+    Logger.log(Logger.levels.DEBUG, "terp.%s()", funcName)
+    local result, err = wrapFunc(...)
     if result then
       locFunc()
     end
-    return result
+    local loc = terp.getLocation()
+    Logger.log(Logger.levels.DEBUG, "location now, %d,%d,%d facing %s", loc.x, loc.y, loc.z, tostring(loc.attitude))
+    return result, err
   end
 end
 
 for _, direction in pairs({ "Up", "Down", "Forward", "Back" }) do
   local funcName = string.lower(direction)
-  turtle[funcName] = wrapMovementFunction(turtle[funcName], _location["move" .. direction])
+  terp[funcName] = wrapMovementFunction(terp[funcName], _location["move" .. direction], funcName)
 end
 
 for _, direction in pairs({ "Right", "Left" }) do
-  turtle["turn" .. direction] = wrapMovementFunction(turtle["turn" .. direction], _location["yaw" .. direction])
+  terp["turn" .. direction] = wrapMovementFunction(terp["turn" .. direction], _location["yaw" .. direction], direction)
 end
 
-turtle.getLocation = _location.getLocation
-turtle.howFar = _location.howFar
-turtle.getFacing = _location.getFacing
+terp.getLocation = _location.getLocation
+terp.howFar = _location.howFar
+terp.getFacing = _location.getFacing
 
-function turtle.turnTo(x, z)
-  if type(x) == "table" then
-    assert(x.x and x.z)
-    z = x.z
-    x = x.x
+function terp.turnTo(targetOrientation)
+  Logger.log(Logger.levels.DEBUG, "turnTo: %s", tostring(targetOrientation))
+  local facing = terp.getFacing()
+  if facing == targetOrientation then
+    return true
   end
-
-  if math.abs(x) == math.abs(z) then
-    error("90 degree directions only. One value must be 0, and the other must be positive or negative to indicate the facing along that axis.")
+  local delta = targetOrientation
+  if facing ~= orientation.transforms.neutral then
+    delta = targetOrientation * orientation.transforms.reverseYaw
+    if facing ~= orientation.transforms.reverseYaw then
+      delta = delta * facing
+    end
   end
-
-  local fX, fY, fZ = _location.getFacing()
-
-  if (z < 0) then
-    if facing.x > 0 then
-      turtle.turnRight()
-    elseif facing.x < 0 then
-      turtle.turnLeft()
-    elseif facing.z > 0 then
-      turtle.turnRight()
-      turtle.turnRight()
-    end
-  elseif (z > 0) then
-    if facing.x == 1 then
-      turtle.turnLeft()
-    elseif facing.x == -1 then
-      turtle.turnRight()
-    elseif facing.z < 0 then
-      turtle.turnRight()
-      turtle.turnRight()
-    end
-  elseif (x > 0) then
-    if facing.z > 0 then
-      turtle.turnRight()
-    elseif facing.z < 0 then
-      turtle.turnLeft()
-    elseif facing.x > 0 then
-      turtle.turnRight()
-      turtle.turnRight()
-    end
-  elseif (x < 0) then
-    if facing.z == 1 then
-      turtle.turnLeft()
-    elseif facing.z == -1 then
-      turtle.turnRight()
-    elseif facing.x < 0 then
-      turtle.turnRight()
-      turtle.turnRight()
-    end
+  Logger.log(Logger.levels.DEBUG, "delta = %s", tostring(delta))
+  if delta == orientation.transforms.reverseYaw then
+    terp.turnAround()
+  elseif delta == orientation.transforms.yawRight then
+    terp.turnRight()
+  else
+    terp.turnLeft()
   end
 end
 
-function turtle.moveTo(x, y, z)
+function terp.moveTo(x, y, z)
   local start = _location.getLocation()
   local facing
   if type(x) == "table" then
@@ -164,30 +146,30 @@ function turtle.moveTo(x, y, z)
   dZ = z - start.z
 
   if dZ ~= 0 then
-    turnTo(0, dZ)
+    terp.turnTo(dZ > 0 and orientation.transforms.neutral or orientation.transforms.reverseYaw)
     for i = 1, math.abs(dZ) do
-      turtle.forward()
+      terp.forward()
     end
   end
   if dX ~= 0 then
-    turnTo(dX, 0)
+    terp.turnTo(dX > 0 and orientation.transforms.yawRight or orientation.transforms.yawLeft)
     for i = 1, math.abs(dX) do
-      turtle.forward()
+      terp.forward()
     end
   end
 
   local verticalMove
   if dY > 0 then
-    verticalMove = turtle.up
+    verticalMove = terp.up
   elseif dY < 0 then
-    verticalMove = turtle.down
+    verticalMove = terp.down
   end
   for i = 1, math.abs(dY) do
     verticalMove()
   end
 
   if facing then
-    turtle.turnTo(facing)
+    terp.turnTo(facing)
   end
 
 end

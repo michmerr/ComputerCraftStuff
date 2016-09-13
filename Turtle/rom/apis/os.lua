@@ -102,11 +102,11 @@ if not os.loadAPI then
       if fnAPI then
           local ok, err = pcall( fnAPI )
           if not ok then
-              print("ERROR:"..err )
+              print("ERROR:"..err.." (".._sPath..")")
               return false
           end
       else
-          print("ERROR:".. err )
+          print("ERROR:".. err.." (".._sPath..")" )
           return false
       end
 

@@ -3,6 +3,7 @@
 local githubUrl = "https://raw.githubusercontent.com/michmerr/ComputerCraftStuff/master/Turtle"
 
 local files = {
+  "/test/consoleLoggerTest";
   "/test/inventoryTest";
   "/test/locationTest";
   "/test/orientationTest";
@@ -13,17 +14,23 @@ local files = {
   "/test/test";
   "/test/testCommon";
   "/test/waypointsTest";
+  "/test/mocks/location";
   "/test/mocks/orientation";
   "/test/mocks/terp";
   "/test/mocks/turtle";
+  "/test/mocks/waypointCollection";
   "/bootstrap";
   "/compactor";
+  "/ConsoleLogger";
   "/e2";
+  "/FileLogger";
   "/inventory";
   "/itemType";
   "/itemTypeCollection";
   "/itemTypeData";
   "/location";
+  "/Logger";
+  "/LogListener";
   "/matrix";
   "/orientation";
   "/stairs";

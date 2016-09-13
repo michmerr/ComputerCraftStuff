@@ -16,7 +16,6 @@ function _testCreateHelper(arg)
 
   assert(orientation.getMockData and orientation.getMockData().calls[1] and orientation.getMockData().calls[1] == "create", "orientation.create() not called")
 
-
   if arg then
     if arg.attitude then
       local att = matrix.new(arg.attitude)
