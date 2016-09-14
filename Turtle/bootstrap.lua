@@ -1,47 +1,11 @@
 -- region *.lua
 -- Date
 local githubUrl = "https://raw.githubusercontent.com/michmerr/ComputerCraftStuff/master/Turtle"
-
-local files = {
-  "/test/consoleLoggerTest";
-  "/test/inventoryTest";
-  "/test/locationTest";
-  "/test/orientationTest";
-  "/test/stairsTest";
-  "/test/terpCommandsTest";
-  "/test/terpRefuelTest";
-  "/test/terpTest";
-  "/test/test";
-  "/test/testCommon";
-  "/test/waypointsTest";
-  "/test/mocks/location";
-  "/test/mocks/orientation";
-  "/test/mocks/terp";
-  "/test/mocks/turtle";
-  "/test/mocks/waypointCollection";
-  "/bootstrap";
-  "/compactor";
-  "/ConsoleLogger";
-  "/e2";
-  "/FileLogger";
-  "/inventory";
-  "/itemType";
-  "/itemTypeCollection";
-  "/itemTypeData";
-  "/location";
-  "/Logger";
-  "/LogListener";
-  "/matrix";
-  "/orientation";
-  "/stairs";
-  "/terp";
-  "/terpCommands";
-  "/terpRefuel";
-  "/transfer";
-  "/utilities";
-  "/waypoint";
-  "/waypointCollection";
-}
+local manifest = "bootstrap_manifest"
+local bootstrapper = "_bootstrap"
+local bootstrapDir = "/.bootstrap"
+local bootstrapperPath = bootstrapDir.."/"..bootstrapper
+local manifestPath = bootstrapDir.."/"..manifest
 
 -- grafting in wget code, since CC under MC 1.7.10 doesn't have it in the ROM, and this is the bootstrapper...
 local function get( sUrl )
@@ -66,31 +30,31 @@ local function get( sUrl )
 end
 
 local function wget(sUrl, sFile)
-  local sPath = shell.resolve( sFile )
-  if fs.exists( sPath ) then
-    if fs.isDir( sPath) then
+  local sPath = shell.resolve(sFile)
+  if fs.exists(sPath) then
+    if fs.isDir(sPath) then
       print("Local filepath points to an existing DIRECTORY.")
       return nil
     end
-    fs.delete( sPath)
-  elseif not fs.exists( fs.getDir(sPath) ) then
+    fs.delete(sPath)
+  elseif not fs.exists(fs.getDir(sPath)) then
     fs.makeDir(fs.getDir(sPath))
   end
 
   -- Do the get
-  local res = get( sUrl )
+  local res = get(sUrl)
   if res then
       local file = fs.open( sPath, "w" )
-      file:write( res )
+      file:write(res)
       file:close()
       return true
   end
   return nil
 end
 
-local function updateBootstrapper()
-  write("Updating bootstrapper...")
-  if wget(githubUrl.."/bootstrap.lua", "/_bootstrap") then
+local function updateFile(from, to)
+  write(string.format("Updating %s ...", to))
+  if wget(githubUrl.."/"..from..".lua", to) then
     print("ok")
     return true
   else
@@ -102,9 +66,22 @@ end
 local function pull()
   local pass = 0
   local fail = 0
-  for i = 1, #files do
-    local localPath = "/terp"..files[i]
-    local fileUrl = githubUrl..files[i]..".lua"
+
+  if not updateFile(manifest, manifestPath) then
+    print "Failed to retrieve manifest. Aborting."
+    return false
+  end
+
+  local filelist = assert(fs.open(manifestPath, "r"))
+  while filelist do
+    local line = filelist.readLine()
+    if not line then
+      filelist.close()
+      break;
+    end
+    local _, _, source, localRoot = string.find(line, "%s*(.+)%s*,%s*(.+)%s*")
+    local localPath = string.gsub(localRoot.."/"..source, "//+", "/")
+    local fileUrl = githubUrl.."/"..source..".lua"
     write(localPath.."...")
     if wget(fileUrl, localPath) then
       pass = pass + 1
@@ -125,9 +102,9 @@ local args = { ...}
 if args[1] and args[1] == "exec" then
   pull()
 else
-  if updateBootstrapper() then
+  if updateFile(shell.getRunningProgram(), bootstrapperPath) then
     print("Executing updated bootstrapper...")
-    shell.run("/_bootstrap", "exec")
+    shell.run(bootstrapperPath, "exec")
   else
     print("Aborting bootstrapper.")
   end
