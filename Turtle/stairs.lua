@@ -31,28 +31,30 @@ local defaultStairItemTypes = inventory.allItems:where(
 
 function new()
 -- treadWidth, treadDepth, height, maxLength, maxWidth, measureOutside, clockwise, materialSlotRangeLow, materialSlotRangeHigh, materialTypes, intervalActions)
-  local treadWidth = 1;
-  local treadDepth = 1;
-  local ceiling = 3;
-  local outside = true;
-  local clockwise = true;
-  local materialSlotRangeLow = 1;
-  local materialSlotRangeHigh = 16;
-  local materialTypes = defaultStairItemTypes;
-  local intervalActions = { };
-  local count = 0;
-  local distance = { wall = 0; edge = 0 };
-  local height = 0;
-  local length = -1;
-  local width = -1;
-  local wallSide = orientation.transforms.yawLeft;
-  local edgeSide = orientation.transforms.yawRight;
+  local treadWidth = 1
+  local treadDepth = 1
+  local outside = true
+  local clockwise = true
+  local materialSlotRangeLow = 1
+  local materialSlotRangeHigh = 16
+  local materialTypes = defaultStairItemTypes
+  local intervalActions = { }
+  local stairsUp = true
+  local count = 0
+  local distance = { wall = 0; edge = 0 }
+  local height = 0
+  local length = -1
+  local width = -1
+  local wallSide = orientation.transforms.yawLeft
+  local edgeSide = orientation.transforms.yawRight
   local above = false  -- state of alternating high/low paths. stair tread level is false, two spaces up is true
   local towardsNext = { }
   local towardsWall = { }
   local towardsEdge = { }
   local towardsLast = { }
   local startingPoint = { }
+  local lateralDirection = edgeSide
+  local onDepth = 0
 
   local self = { }
 
@@ -76,6 +78,8 @@ function new()
     return treadWidth
   end
 
+  self.getPassageWidth = self.getTreadWidth
+
   function self.setTreadWidth(value)
     assert(value and type(value) == "number" and value > 0, "value must be a positive number (value passed was "..tostring(value)..")")
     treadWidth = value
@@ -88,15 +92,6 @@ function new()
   function self.setTreadDepth(value)
     assert(value and type(value) == "number" and value > 0, "value must be a positive number (value passed was "..tostring(value)..")")
     treadDepth = value
-  end
-
-  function self.getCeiling()
-    return ceiling
-  end
-
-  function self.setCeiling(value)
-    assert(value and type(value) == "number" and value > 1, "value must be a number, 2 or greater (value passed was "..tostring(value)..")")
-    ceiling = value
   end
 
   function self.getTurnOutside()
@@ -117,6 +112,17 @@ function new()
     assert(value and type(value) == "boolean", "value must be a boolean (value passed was "..tostring(value)..")")
     clockwise = value
     updateSides()
+  end
+
+  function self.goingUp()
+    return stairsUp
+  end
+
+  function self.setGoingUp(value)
+    assert(value and type(value) == "boolean", "value must be a boolean (value passed was "..tostring(value)..")")
+    if (value and height < 0) or (not value and height > 0) then
+      self.setHeight(height * -1)
+    end
   end
 
   function self.getMaterialSlotRangeLow()
@@ -183,6 +189,8 @@ function new()
     distance.wall = 0
   end
 
+  self.getVerticalDistance = self.getCount
+
   function self.getHeight()
     return height
   end
@@ -211,8 +219,36 @@ function new()
     width = value or -1
   end
 
-  function self.atTreadLevel()
+  function self.atFloorLevel()
     return not above
+  end
+
+  function self.isOnWall()
+    return treadWidth == 1 or lateralDirection == towardsWall
+  end
+
+  function self.isOnEdge()
+    return treadWidth == 1 or lateralDirection == towardsEdge
+  end
+
+  function self.getWallDirection()
+    return towardsWall
+  end
+
+  function self.getEdgeDirection()
+    return towardsEdge
+  end
+
+  function self.getNextDirection()
+    return towardsNext
+  end
+
+  function self.getLastDirection()
+    return towardsLast
+  end
+
+  function self.isNextToPreviousStep()
+    return onDepth < 2
   end
 
   local dimensionsEvaluated
@@ -296,12 +332,20 @@ function new()
     return true
   end
 
-  local function runIntervalActions()
+  local function runIntervalActions(corner)
+    local result = true
     if intervalActions then
       for _, action in pairs(intervalActions) do
-        action.check(self)
+        local r, err = action.check(self, corner)
+        result = result and r
+        if not r then
+          if err then
+            log(Logger.levels.ERROR, err)
+          end
+        end
       end
     end
+    return result
   end
 
   local function layTread()
@@ -327,7 +371,10 @@ function new()
   -- interval actions will be offered a chance to trigger at each end of
   -- the traversal.
   local function traverseStep(action)
+    -- change the lateral direction here, so that the wall/edge positions are the same
+    -- at end of a traversal and the start of the next.
     runIntervalActions()
+    changeLateralDirection()
     if treadWidth > 1 then
       log(Logger.levels.DEBUG, "face down tread: %s", tostring(lateralDirection) )
       terp.turnTo(lateralDirection)
@@ -345,7 +392,6 @@ function new()
       -- side of the step. Doing it before the turn to face the next step since
       -- most interval actions will turn to face an end if they trigger.
       runIntervalActions()
-      changeLateralDirection()
       log(Logger.levels.DEBUG, "turn next: ")
       terp.turnTo(towardsNext)
     end
@@ -381,6 +427,7 @@ function new()
     for i = 1, depth do
       terp.turnTo(towardsNext)
       move(terp.forward)
+      onDepth = i
       if not stairsUp and i == 1 then
         move(terp.down)
       end
@@ -425,18 +472,34 @@ function new()
 
   function turnCorner()
     local direction = outside and towardsEdge or towardsWall
+
     terp.turnTo(direction)
-    -- if they're on the outside corner of the turn, move them to the edge of the next step
-    if lateralDirection == direction then
-      for j = 2, treadWidth do
-        move(terp.forward)
-      end
-    end
+
     -- update the relative directions to the edge, wall, next step and last step.
+    -- set before the movement loop to give proper orientation for interval actions.
     setDirections()
 
-    lateralDirection = outside and towardsEdge or towardsWall
+    -- if they're on the outside corner of the turn, move them to the edge of the next step
+    if lateralDirection == direction then
+      for i = 2, treadWidth do
+        move(terp.back)
+      end
+    end
 
+    -- this will reflect the previous pass direction relative to the new heading, and lets
+    -- the interval actions orient on the wall/edge for the following movements.
+    -- it will be flipped at the start of the next traversal
+    lateralDirection = outside and towardsWall or towardsEdge
+
+    -- special case call, since we're turning in place
+    updateIncrementalCounters(true)
+    runIntervalActions(true)
+
+    for i = 2, treadWidth do
+      move(terp.forward)
+      updateIncrementalCounters(true)
+      runIntervalActions()
+    end
   end
 
   -- Starting in front of the first step, immediately adjacent to the anchor wall.

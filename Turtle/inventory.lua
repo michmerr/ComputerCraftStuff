@@ -25,15 +25,23 @@ function selectMatching(func, low, high)
   Logger.log(Logger.levels.DEBUG, "selectMatching %s, %s, %s", tostring(func), tostring(low), tostring(high))
   low, high = defaultLowHigh(low, high)
   Logger.log(Logger.levels.DEBUG, "selectMatching between %d and %d", low, high)
-  if func(terp.getItemDetail()) then
+
+  local currentSlot = terp.getSelectedSlot()
+  -- check the currently selected slot first
+  Logger.log(Logger.levels.DEBUG, "checking current slot (%d)", currentSlot)
+  if currentSlot >= low and currentSlot <= high and func(terp.getItemDetail()) then
+    Logger.log(Logger.levels.DEBUG, "using current slot")
     return true
   end
 
   for i = low, high do
-    if func(terp.getItemDetail(i)) then
-      --print("found and %s is %s", tostring(i), type(i))
-      terp.select(i)
-      return true
+    if i ~= currentSlot then
+      Logger.log(Logger.levels.DEBUG, "checking slot (%d)", i)
+      if func(terp.getItemDetail(i)) then
+        --print("found and %s is %s", tostring(i), type(i))
+        terp.select(i)
+        return true
+      end
     end
   end
   return false
@@ -64,27 +72,40 @@ function terp.selectItemType(itemType, low, high)
 
   return selectMatching(
     function(slotItem)
-      if not slotItem or slotItem.count == 0 then
-        return not itemType
+      Logger.log(Logger.levels.DEBUG, " Seeking ItemType: %s", itemType and tostring(itemType) or "Any")
+      Logger.log(Logger.levels.DEBUG, " Current slot item:")
+      if not slotItem then
+        Logger.log(Logger.levels.DEBUG, "  NONE")
+        return false
+      else
+        for k,v in pairs(slotItem) do
+          Logger.log(Logger.levels.DEBUG, "    %s = %s", k, tostring(v))
+        end
+      end
+      if slotItem.count == 0 then
+        Logger.log(Logger.levels.DEBUG, " NONE")
+        return false
       end
       if not itemType then
-        return false
+        Logger.log(Logger.levels.DEBUG, " Matched ANY item")
+        return true
       end
       if type(itemType) == "table"  then
         if itemType.contains then
-          --print("Checking to see if itemTypeCollection contains slotItem")
+          Logger.log(Logger.levels.DEBUG, "Checking to see if itemTypeCollection contains slotItem")
           return itemType:contains(slotItem)
         elseif #itemType > 0 then
-          --print("Checking to see if list contains slotItem")
+          Logger.log(Logger.levels.DEBUG, "Checking to see if list contains slotItem")
           for i = 1, #itemType do
-            --print("Comparing itemType to slotItem")
+            Logger.log(Logger.levels.DEBUG, "Comparing itemType to slotItem")
             if itemType[i]:equals(slotItem) then
               return true
             end
           end
         end
-        return false
+        return true
       end
+      Logger.log(Logger.levels.DEBUG, " Matched ANY item")
       return itemType.equals(slotItem)
     end,
     low, high)

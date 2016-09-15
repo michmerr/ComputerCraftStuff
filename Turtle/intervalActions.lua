@@ -1,62 +1,125 @@
 --region *.lua
 --Date
 
-function placeTorches(horizontalInterval, verticalInterval, height, materialSlotRangeLow, materialSlotRangeHigh)
+function placeOnStairsWallAction(horizontalInterval, verticalInterval, height, meterialTypes, materialSlotRangeLow, materialSlotRangeHigh)
 
   local action = { }
 
-  action.horizontal = horizontalInterval
+  action.horizontalInterval = horizontalInterval
   action.verticalInterval = verticalInterval
   action.height = height
   action.materialSlotRangeLow = materialSlotRangeLow
   action.materialSlotRangeHigh = materialSlotRangeHigh
-  -- action.materialTypes = { }
+  action.materialTypes = { }
+  action.verticalsDone = 0
 
-  function action.check(job)
-    if not job.isOnWall() then
-      return
-    end
+  function action.shouldRun(job)
+    local logger = job.getLogger()
+    logger:log(Logger.levels.DEBUG, "placeOnStairsWallAction.shouldRun()")
 
-    if job.above and action.height == 1 then
-      return
-    end
+    -- since and item placed on the wall will potentially block the turtle, we will place at position - 1.
+    -- this avoids the complexities of figuring out where in the traverse passes something can get placed without
+    -- running into it in the next pass.
 
-    local vMatch = action.verticalInterval and action.verticalInterval % job.distance.vertical == 0
-    local hMatch = action.horizontalInterval and action.horizontalInterval % job.distance.vertical == 0
+    local vMatch = action.verticalInterval and job.getVerticalDistance() % action.verticalInterval  == 0 and action.verticalsDone < job.getVerticalDistance() / action.verticalInterval
+    local hMatch = action.horizontalInterval and job.getWallDistance() % action.horizontalInterval  == 1 and job.getWallDistance() > 1
+    logger:log(Logger.levels.DEBUG, "  verticalInterval = %s", tostring(action.verticalInterval))
+    logger:log(Logger.levels.DEBUG, "  horizontalInterval = %s", tostring(action.horizontalInterval))
+    logger:log(Logger.levels.DEBUG, "  getVerticalDistance = %s", tostring(job.getVerticalDistance()))
+    logger:log(Logger.levels.DEBUG, "  getWallDistance = %s", tostring(job.getWallDistance()))
+    logger:log(Logger.levels.DEBUG, "  vMatch = %s", tostring(vMatch))
+    logger:log(Logger.levels.DEBUG, "  hMatch = %s", tostring(hMatch))
 
     if not vMatch and not hMatch then
-      return
+      logger:log(Logger.levels.DEBUG, "no interval match.")
+      return false
     end
 
-    local originalFacing = turtle.getFacing()
-    local rY
-    turtle.turnTo(job.towardsWall)
-    if above then
-      if action.height == 2 then
-        turtle.down()
-        rY = turtle.Up()
-      elseif action.height == 3 then
-        turtle.up()
-        rY = turtle.Down()
+    if not job.isOnWall() then
+      logger:log(Logger.levels.DEBUG, "not on wall.")
+      return false
+    end
+
+    if job.getPassageWidth() < 2 then
+      logger:log(Logger.levels.ERROR, "Can't place items on wall when width is less than two.")
+      logger:log(Logger.levels.DEBUG, "returning from placeOnStairsWallAction.check()")
+      return false, "Can't place items on wall when width is less than two."
+    end
+
+    -- only go on the high/low pass that requires the least vertical movement
+    if (job.atFloorLevel() and not job.goingUp()) or (not job.atFloorLevel() and job.goingUp()) then
+      return false
+    end
+
+    if vMatch then
+      action.verticalsDone = action.verticalsDone + 1
+    end
+
+    return true
+  end
+
+  function action.check(job, corner)
+    local logger = job.getLogger()
+    if not action.shouldRun(job) or corner then
+      return false
+    end
+
+    local result = false
+
+    local originalFacing = terp.getFacing()
+    terp.turnTo(job.getLastDirection())
+    terp.forward()
+    local dY = action.height - 2
+    if not job.isNextToPreviousStep() then
+      dY = dY + job.goingUp() and 1 or -1
+    end
+    if dY > 0 then
+      for i = 1, dY do
+        terp.up()
+      end
+    elseif dY < 0 then
+      for i = 1, dY do
+        terp.down()
+      end
+    end
+    terp.turnTo(job.getWallDirection())
+
+    -- place wall piece, if necessary
+    if not terp.detect() then
+      terp.placeItem(job.getMaterialTypes(), job.getMaterialSlotRangeLow(), job.getMaterialSlotRangeHigh())
+    end
+
+    -- back off to provide room for placement
+    terp.back()
+    result = terp.placeItem(action.materialTypes, action.materialSlotRangeLow, action.materialSlotRangeHigh)
+
+    -- return to starting height
+    if dY > 0 then
+      for i = 1, dY do
+        terp.down()
+      end
+    elseif dY < 0 then
+      for i = 1, dY do
+        terp.up()
       end
     end
 
-    placeForward(job.materialSlotRangeLow, job.materialSlotRangeHigh, job.materialTypes)
-    local result = placeForward(action.materialSlotRangeLow, action.materialSlotRangeHigh, action.materialTypes)
+    -- move back to starting step
+    terp.turnTo(job.getNextDirection())
+    terp.forward()
+    terp.turnTo(job.getWallDirection())
+    -- go forward to balance the back() for placement
+    terp.forward()
+    terp.turnTo(originalFacing)
 
-    if rY then
-      rY()
-    end
-
-    turtle.turnTo(originalFacing)
-
+    logger:log(Logger.levels.DEBUG, "returning from placeOnStairsWallAction.check()")
     return result
   end
 
   return action
 end
 
-function placeRailings(materialSlotRangeLow, materialSlotRangeHigh, materialTypes)
+function placeRailingsOnStairsAction(materialTypes, materialSlotRangeLow, materialSlotRangeHigh)
 
   local action = { }
 
@@ -65,21 +128,33 @@ function placeRailings(materialSlotRangeLow, materialSlotRangeHigh, materialType
   action.materialTypes = materialTypes
 
   function action.check(job)
-    if job.above or job.isOnWall() then
-      return true
+
+    if job.getPassageWidth() < 2 then
+      job.getLogger():log(Logger.levels.ERROR, "Can't place items when width is less than two.")
+      return false, "Can't place items when width is less than two."
     end
 
-    local originalFacing = turtle.getFacing()
-    turtle.turnTo(job.towardsEdge)
-    local result = true
-    if not turtle.detect() then
-      turtle.forward()
-      placeDown(job.materialSlotRangeLow, job.materialSlotRangeHigh, job.materialTypes)
-      turtle.back()
-      result = placeForward(action.materialSlotRangeLow, action.materialSlotRangeHigh, action.materialTypes)
+    -- since a placed item will not allow the turtle to move back into that position,
+    -- the operation will actually be performed on the previous stair step.
+    if not job.isOnEdge() then
+      return false
     end
 
-    turtle.turnTo(originalFacing)
+    local jobUp = job.getHeight > 0
+    local jobAbove = not job.atFloorLevel()
+
+    -- wait for the cycle where the turtle is most aligned with the previous step height
+    if (jobUp and jobAbove) or (not jobUp and not jobAbove) then
+      return false
+    end
+
+    local originalFacing = terp.getFacing()
+    terp.turnTo(job.getDirectionLast())
+    local result = false
+    terp.forward()
+    result = terp.placeItemDown(action.materialTypes, action.materialSlotRangeLow, action.materialSlotRangeHigh)
+    terp.back()
+    terp.turnTo(originalFacing)
     return result
   end
 
@@ -94,63 +169,38 @@ function seal(materialSlotRangeLow, materialSlotRangeHigh, materialTypes)
   action.materialSlotRangeHigh = materialSlotRangeHigh
   action.materialTypes = materialType
 
+  local function tryPlace(place, r, e)
+    local result = r
+    if not terp.detect() and not terp.placeItem(action.materialTypes, action.materialSlotRangeLow, action.materialSlotRangeHigh) then
+      local loc = terp.getLocation()
+      local err = string.format("error sealing stairwell at %d, %d, %d (relative)", loc.x, loc.y, loc.z)
+      return false, e and e..";"..err or err
+    end
+    return result, e
+  end
+
   function action.check(job)
     local result = true
-    local originalFacing = turtle.getFacing()
+    local err
+    local originalFacing = terp.getFacing()
     if job.isOnWall() then
-      turtle.turnTo(job.towardsWall)
+      terp.turnTo(job.getWallDirection())
     else
-      turtle.turnTo(job.towardsEdge)
+      terp.turnTo(job.getEdgeDirection())
     end
 
-    if job.above then
-      turtle.down()
-      if not turtle.detect() and not placeForward(action.materialSlotRangeLow, action.materialSlotRangeHigh, action.materialTypes) then
-        turtle.down()
-        if not placeForward(action.materialSlotRangeLow, action.materialSlotRangeHigh, action.materialTypes) then
-          turtle.forward()
-          if not turtle.placeDown(action.materialSlotRangeLow, action.materialSlotRangeHigh, action.materialTypes) then
-            local loc = turtle.getLocation()
-            print(string.format("error sealing stairwell at %d, %d, %d (relative)", loc.x, loc.y, loc.z))
-          end
-          turtle.back()
-          result = placeForward(action.materialSlotRangeLow, action.materialSlotRangeHigh, action.materialTypes) and result
-        end
-        turtle.up()
-        result = placeForward(action.materialSlotRangeLow, action.materialSlotRangeHigh, action.materialTypes) and result
-      end
-      turtle.up()
-      result = turtle.detect() or placeForward(action.materialSlotRangeLow, action.materialSlotRangeHigh, action.materialTypes) and result
-      turtle.up()
-      result = turtle.detect() or placeForward(action.materialSlotRangeLow, action.materialSlotRangeHigh, action.materialTypes) and result
-      if not turtle.detectUp() and not placeUp(action.materialSlotRangeLow, action.materialSlotRangeHigh, action.materialTypes) then
-        turtle.up()
-        placeForward(action.materialSlotRangeLow, action.materialSlotRangeHigh, action.materialTypes)
-        turtle.down()
-        placeUp(action.materialSlotRangeLow, action.materialSlotRangeHigh, action.materialTypes)
-      end
-      local halfWay = math.ceil(job.treadWidth / 2)
-      for i = 2, halfWay do
-        turtle.back()
-        placeUp(action.materialSlotRangeLow, action.materialSlotRangeHigh, action.materialTypes)
-      end
-      for i = 2, halfWay do
-        turtle.forward()
-      end
-      turtle.down()
-    else
-      if not turtle.detect() and not placeForward(action.materialSlotRangeLow, action.materialSlotRangeHigh, action.materialTypes) then
-        turtle.forward()
-        if not turtle.placeDown(action.materialSlotRangeLow, action.materialSlotRangeHigh, action.materialTypes) then
-          local loc = turtle.getLocation()
-          print(string.format("error sealing stairwell at %d, %d, %d (relative)", loc.x, loc.y, loc.z))
-        end
-        turtle.back()
-        result = placeForward(action.materialSlotRangeLow, action.materialSlotRangeHigh, action.materialTypes) and result
-      end
+    result, err = tryPlace(terp.placeItem, true)
+    if not job.atFloorLevel() then
+      terp.down()
+      result, err = tryPlace(terp.placeItem, result, err)
+      terp.up()
+      terp.up()
+      result, err = tryPlace(terp.placeItem, result, err)
+      result, err = tryPlace(terp.placeItemUp, result, err)
+      terp.down()
     end
-    turtle.turnTo(originalFacing)
-    return result
+    terp.turnTo(originalFacing)
+    return result, err
   end
 
   return action

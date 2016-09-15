@@ -6,7 +6,7 @@ if not turtle then
 end
 
 if not Logger then
-  os.loadAPI("Logger")
+  os.loadAPI("/terp/Logger")
 end
 
 local base = { }
@@ -117,9 +117,9 @@ function forward()
   return move(turtle.forward, turtle.detect, turtle.dig, turtle.attack)
 end
 
-function back()
+function back(failOk)
   local result = turtle.back()
-  if not result then
+  if not result and not failOk then
     turnAround()
     result = forward()
     turnAround()

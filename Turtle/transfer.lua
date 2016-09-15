@@ -1,7 +1,7 @@
 -- region *.lua
 -- Date
 if not utilities then
-  dofile("utilities")
+  dofile("/terp/utilities")
 end
 
 function flush()
