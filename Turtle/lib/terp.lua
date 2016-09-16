@@ -6,7 +6,7 @@ if not turtle then
 end
 
 if not Logger then
-  os.loadAPI("/terp/Logger")
+  os.loadAPI("Logger")
 end
 
 local base = { }

@@ -3,7 +3,7 @@
 if require then
   require("matrix")
 else
-  os.loadAPI("/terp/matrix")
+  os.loadAPI("matrix")
 end
 
 

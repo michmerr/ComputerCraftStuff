@@ -1,26 +1,26 @@
 -- region *.lua
 -- Date
 if not utilities then
-  dofile("/terp/utilities")
+  dofile("utilities")
 end
 
 if not terp then
-  os.loadAPI("/terp/terp")
+  os.loadAPI("terp")
 end
 
 if not location then
-  os.loadAPI("/terp/location")
+  os.loadAPI("location")
 end
 
 if not inventory then
-  os.loadAPI("/terp/inventory")
+  os.loadAPI("inventory")
 end
 
 if not FileLogger then
-  os.loadAPI("/terp/FileLogger")
+  os.loadAPI("FileLogger")
 end
 if not ConsoleLogger then
-  os.loadAPI("/terp/ConsoleLogger")
+  os.loadAPI("ConsoleLogger")
 end
 
 local defaultStairItemTypes = inventory.allItems:where(

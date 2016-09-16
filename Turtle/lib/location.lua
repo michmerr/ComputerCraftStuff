@@ -2,11 +2,11 @@
 -- Date
 
 if not terp then
-  os.loadAPI("/terp/terp")
+  os.loadAPI("terp")
 end
 
 if not orientation then
-  os.loadAPI("/terp/orientation")
+  os.loadAPI("orientation")
 end
 
 if not Logger then

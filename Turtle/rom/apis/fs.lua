@@ -1,5 +1,5 @@
 if not utilities then
-  dofile("../utilities.lua")
+  dofile("../lib/utilities.lua")
 end
 if not fs then
   fs = {}

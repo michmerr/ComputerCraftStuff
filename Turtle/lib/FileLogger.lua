@@ -2,7 +2,7 @@
 --Date
 
 if not LogListener then
-  os.loadAPI("/terp/LogListener")
+  os.loadAPI("LogListener")
 end
 
 function new(filename, threshold, specificLevels, append)

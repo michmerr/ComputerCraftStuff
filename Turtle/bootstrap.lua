@@ -54,7 +54,7 @@ end
 
 local function updateFile(from, to)
   write(string.format("Updating %s ...", to))
-  if wget(githubUrl.."/"..from..".lua", to) then
+  if wget(githubUrl.."/"..from, to) then
     print("ok")
     return true
   else
@@ -63,38 +63,88 @@ local function updateFile(from, to)
   end
 end
 
+local function cleanMovedFiles(oldFiles, currentFiles)
+  for i = 1, #oldFiles do
+    if fs.exists(oldFiles[i].localPath) then
+      local found = false
+      for j = 1, #currentFiles do
+        if oldFiles[i].localPath == currentFiles[i].localPath then
+          found = true
+          break;
+        end
+      end
+      if not found then
+        print("removing "..oldFiles[i].localPath)
+        fs.delete(oldFiles[i].localPath)
+      end
+    end
+  end
+end
+
+local function parseManifestLine(line)
+  local _, _, source, localRoot = string.find(line, "%s*(.+)%s*,%s*(.+)%s*")
+  local localPath = string.gsub(localRoot.."/"..source, "//+", "/")
+  local fileUrl = githubUrl.."/"..source..".lua"
+  return fileUrl, localPath
+end
+
+local function readManifest(filename)
+  local result = { }
+  hFile = assert(fs.open(filename, "r"))
+  while hFile do
+    local line = hFile.readLine()
+    if not line then
+      hFile.close()
+      break;
+    end
+    local serverPath, localPath = parseManifestLine(line)
+    table.insert(result, { serverPath = serverPath; localPath = localPath; })
+  end
+  return result
+end
+
+local function updateManifest()
+  local oldManifest = manifestPath..".old"
+  if fs.exists(oldManifest) then
+    delete(oldManifest)
+  end
+  fs.copy(manifestPath, oldManifest)
+  if not updateFile(manifest, manifestPath) then
+    if fs.exists(manifestPath) then
+      delete(manifestPath)
+    end
+    fs.move(oldManifest, manifestPath)
+    return nil
+  end
+  delete(oldManifest)
+  return true
+end
+
 local function pull()
   local pass = 0
   local fail = 0
 
-  if not updateFile(manifest, manifestPath) then
+  local existingFiles = readManifest(manifestPath)
+  if not updateManifest(existingFiles) then
     print "Failed to retrieve manifest. Aborting."
     return false
   end
-
-  local filelist = assert(fs.open(manifestPath, "r"))
-  while filelist do
-    local line = filelist.readLine()
-    if not line then
-      filelist.close()
-      break;
-    end
-    local _, _, source, localRoot = string.find(line, "%s*(.+)%s*,%s*(.+)%s*")
-    local localPath = string.gsub(localRoot.."/"..source, "//+", "/")
-    local fileUrl = githubUrl.."/"..source..".lua"
-    write(localPath.."...")
-    if wget(fileUrl, localPath) then
+  local filelist = readManifest(manifestPath)
+  for i = 1, #filelist do
+    write(filelist[i].localPath.."...")
+    if updateFile(filelist[i].serverPath, filelist[i].localPath) then
       pass = pass + 1
-      print("ok")
     else
       fail = fail + 1
-      print("failed")
     end
   end
+  cleanMovedFiles(existingFiles, filelist)
+
   print(string.format("Files updated successfully: %d", pass))
   if (fail > 0) then
     print(string.format("File updates failed: %d", fail))
   end
+
 end
 
 local args = { ...}
@@ -102,15 +152,11 @@ local args = { ...}
 if args[1] and args[1] == "exec" then
   pull()
 else
-  if updateFile(shell.getRunningProgram(), bootstrapperPath) then
+  if updateFile(fs.getName(shell.getRunningProgram()), bootstrapperPath) then
     print("Executing updated bootstrapper...")
     shell.run(bootstrapperPath, "exec")
   else
     print("Aborting bootstrapper.")
   end
 end
-
-
-
-
 -- endregion

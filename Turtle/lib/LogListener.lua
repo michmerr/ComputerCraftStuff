@@ -5,7 +5,7 @@ if not bit then
   os.loadAPI("../rom/apis/bit")
 end
 if not Logger then
-  os.loadAPI("/terp/Logger")
+  os.loadAPI("Logger")
 end
 
 function create(threshold, specificLevels)

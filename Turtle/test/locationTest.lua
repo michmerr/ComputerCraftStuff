@@ -4,8 +4,8 @@ if not testCommon then
   os.loadAPI("./testCommon")
 end
 
-testCommon.reloadAPI("terp", "test/mocks/terp")
-testCommon.reloadAPI("orientation", "test/mocks/orientation")
+testCommon.reloadAPI("terp", "mocks/terp")
+testCommon.reloadAPI("orientation", "mocks/orientation")
 testCommon.reloadAPI("location", "location")
 testCommon.reloadAPI("matrix", "matrix")
 

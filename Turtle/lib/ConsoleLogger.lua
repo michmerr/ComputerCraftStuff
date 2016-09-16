@@ -1,7 +1,7 @@
 --region *.lua
 --Date
 if not LogListener then
-  os.loadAPI("/terp/LogListener")
+  os.loadAPI("LogListener")
 end
 
 function new(threshold, specificLevels)

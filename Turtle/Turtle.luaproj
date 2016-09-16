@@ -26,11 +26,11 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="bootstrap_manifest" />
-    <Compile Include="ConsoleLogger.lua" />
-    <Compile Include="FileLogger.lua" />
-    <Compile Include="intervalActions.lua" />
-    <Compile Include="Logger.lua" />
-    <Compile Include="LogListener.lua" />
+    <Compile Include="lib\ConsoleLogger.lua" />
+    <Compile Include="lib\FileLogger.lua" />
+    <Compile Include="lib\intervalActions.lua" />
+    <Compile Include="lib\Logger.lua" />
+    <Compile Include="lib\LogListener.lua" />
     <Compile Include="rom\apis\bit.lua">
       <Publish>False</Publish>
     </Compile>
@@ -38,27 +38,28 @@
     <Compile Include="rom\apis\buffer.lua">
       <Publish>False</Publish>
     </Compile>
-    <Compile Include="compactor.lua" />
-    <Compile Include="e2.lua" />
+    <Compile Include="bin\compactor.lua" />
+    <Compile Include="bin\e2.lua" />
     <Compile Include="rom\apis\fs.lua">
       <Publish>False</Publish>
     </Compile>
     <Compile Include="rom\apis\http.lua">
       <Publish>False</Publish>
     </Compile>
-    <Compile Include="inventory.lua" />
+    <Compile Include="lib\inventory.lua" />
+    <Compile Include="bin\startup.lua" />
     <Compile Include="test\consoleLoggerTest.lua" />
     <Compile Include="test\inventoryTest.lua" />
-    <Compile Include="itemType.lua" />
-    <Compile Include="itemTypeCollection.lua" />
-    <Compile Include="itemTypeData.lua" />
-    <Compile Include="location.lua" />
+    <Compile Include="lib\itemType.lua" />
+    <Compile Include="lib\itemTypeCollection.lua" />
+    <Compile Include="lib\itemTypeData.lua" />
+    <Compile Include="lib\location.lua" />
     <Compile Include="test\locationTest.lua" />
-    <Compile Include="matrix.lua" />
+    <Compile Include="lib\matrix.lua" />
     <Compile Include="test\mocks\location.lua" />
     <Compile Include="test\mocks\orientation.lua" />
     <Compile Include="test\mocks\terp.lua" />
-    <Compile Include="orientation.lua" />
+    <Compile Include="lib\orientation.lua" />
     <Compile Include="test\mocks\turtle.lua" />
     <Compile Include="test\mocks\waypointCollection.lua" />
     <Compile Include="test\orientationTest.lua" />
@@ -68,38 +69,40 @@
     <Compile Include="rom\apis\peripheral.lua">
       <Publish>False</Publish>
     </Compile>
-    <Compile Include="recipe.lua" />
+    <Compile Include="lib\recipe.lua" />
     <Compile Include="rom\apis\redstone.lua">
       <Publish>False</Publish>
     </Compile>
     <Compile Include="rom\apis\rs.lua">
       <Publish>False</Publish>
     </Compile>
-    <Compile Include="stairs.lua" />
+    <Compile Include="lib\stairs.lua" />
     <Compile Include="rom\apis\term.lua">
       <Publish>False</Publish>
     </Compile>
-    <Compile Include="terp.lua" />
-    <Compile Include="terpCommands.lua" />
+    <Compile Include="lib\terp.lua" />
+    <Compile Include="lib\terpCommands.lua" />
     <Compile Include="test\stairsTest.lua" />
     <Compile Include="test\terpCommandsTest.lua" />
     <Compile Include="test\terpRefuelTest.lua" />
     <Compile Include="test\terpTest.lua" />
     <Compile Include="test\test.lua" />
     <Compile Include="test\testCommon.lua" />
-    <Compile Include="transfer.lua" />
+    <Compile Include="bin\transfer.lua" />
     <Compile Include="rom\apis\turtle\turtle.lua">
       <Publish>False</Publish>
     </Compile>
-    <Compile Include="terpRefuel.lua" />
-    <Compile Include="tree.lua" />
-    <Compile Include="utilities.lua" />
-    <Compile Include="waypointCollection.lua" />
-    <Compile Include="waypoint.lua" />
+    <Compile Include="lib\terpRefuel.lua" />
+    <Compile Include="bin\tree.lua" />
+    <Compile Include="lib\utilities.lua" />
+    <Compile Include="lib\waypointCollection.lua" />
+    <Compile Include="lib\waypoint.lua" />
     <Compile Include="test\waypointsTest.lua" />
-    <Compile Include="wget.lua" />
+    <Compile Include="bin\wget.lua" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="lib\" />
+    <Folder Include="bin\" />
     <Folder Include="rom\" />
     <Folder Include="rom\apis\" />
     <Folder Include="rom\apis\turtle\" />

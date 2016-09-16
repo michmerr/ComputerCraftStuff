@@ -2,10 +2,10 @@
 --Date
 
 if not Logger then
-  os.loadAPI("/terp/Logger")
+  os.loadAPI("Logger")
 end
 if not ConsoleLogger then
-  os.loadAPI("/terp/ConsoleLogger")
+  os.loadAPI("ConsoleLogger")
 end
 
 local listener = ConsoleLogger.new()
@@ -19,9 +19,6 @@ function reloadAPI(checkApi, loadApi)
         os.unloadAPI(checkApi)
     end
 
-    if not package then
-      loadApi = "/terp/"..loadApi
-    end
     os.loadAPI(loadApi)
 
 end

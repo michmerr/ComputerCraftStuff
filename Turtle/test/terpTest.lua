@@ -12,7 +12,7 @@ if not testCommon then
 end
 
 function init()
-  testCommon.reloadAPI("turtle", "test/mocks/turtle")
+  testCommon.reloadAPI("turtle", "mocks/turtle")
   testCommon.reloadAPI("terp", "terp")
 end
 

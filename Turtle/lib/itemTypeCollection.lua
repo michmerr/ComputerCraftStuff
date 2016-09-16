@@ -1,7 +1,7 @@
 -- region *.lua
 -- Date
 if not itemType then
-  os.loadAPI("/terp/itemType")
+  os.loadAPI("itemType")
 end
 
 local itemTypeCollectionBase = { }

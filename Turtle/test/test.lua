@@ -1,7 +1,7 @@
 -- region *.lua
 local root = ".."
 if not fs then
-  package.path = package.path .. ";../?;../?.lua;../rom/apis/?;../rom/apis/?.lua;../rom/apis/turtle/?;../rom/apis/turtle/?.lua"
+  package.path = package.path .. ";../lib/?;../lib/?.lua;../rom/apis/?;../rom/apis/?.lua;../rom/apis/turtle/?;../rom/apis/turtle/?.lua"
 
   dofile("../rom/apis/fs.lua")
   dofile("../rom/apis/os.lua")

@@ -4,7 +4,7 @@ if not utilities then
     if require then
         require("utilities")
     else
-        dofile("/terp/utilities")
+        dofile("utilities")
     end
 end
 
