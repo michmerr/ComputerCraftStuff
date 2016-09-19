@@ -25,12 +25,16 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="bin\treefarm.lua" />
     <Compile Include="bootstrap_manifest" />
+    <Compile Include="lib\cachingUnloadHandler.lua" />
     <Compile Include="lib\ConsoleLogger.lua" />
     <Compile Include="lib\FileLogger.lua" />
     <Compile Include="lib\intervalActions.lua" />
     <Compile Include="lib\Logger.lua" />
     <Compile Include="lib\LogListener.lua" />
+    <Compile Include="lib\goToPlaceDoAThingHandler.lua" />
+    <Compile Include="lib\unloadAction.lua" />
     <Compile Include="rom\apis\bit.lua">
       <Publish>False</Publish>
     </Compile>

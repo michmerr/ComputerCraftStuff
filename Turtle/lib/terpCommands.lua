@@ -6,48 +6,45 @@ end
 if not utilities then
   dofile("utilities")
 end
-if not stairs then
-  os.loadAPI("stairs")
-end
 
 directionFuncs = {
   forward = {
-    move = turtle.forward;
-    dig = turtle.dig;
-    place = stairs.place;
-    detect = turtle.detect;
-    attack = turtle.attack;
-    inspect = turtle.inspect;
-    drop = turtle.drop;
-    suck = turtle.suck;
+    move = terp.forward;
+    dig = terp.dig;
+    place = terp.placeItem;
+    detect = terp.detect;
+    attack = terp.attack;
+    inspect = terp.inspect;
+    drop = terp.drop;
+    suck = terp.suck;
     };
   up = {
-    move = turtle.up;
-    dig = turtle.digUp;
-    place = stairs.placeUp;
-    detect = turtle.detectUp;
-    attack = turtle.attackUp;
-    inspect = turtle.inspectUp;
-    drop = turtle.dropUp;
-    suck = turtle.suckUp;
+    move = terp.up;
+    dig = terp.digUp;
+    place = terp.placeItemUp;
+    detect = terp.detectUp;
+    attack = terp.attackUp;
+    inspect = terp.inspectUp;
+    drop = terp.dropUp;
+    suck = terp.suckUp;
      };
   down = {
-    move = turtle.down;
-    dig = turtle.digDown;
-    place = stairs.placeDown;
-    detect = turtle.detectDown;
-    attack = turtle.attackDown;
-    inspect = turtle.inspectDown;
-    drop = turtle.dropDown;
-    suck = turtle.suckDown;
+    move = terp.down;
+    dig = terp.digDown;
+    place = terp.placeItemDown;
+    detect =s terp.detectDown;
+    attack = terp.attackDown;
+    inspect = terp.inspectDown;
+    drop = terp.dropDown;
+    suck = terp.suckDown;
     };
   back = {
-    move = turtle.back;
-    detect = turtle.detectBack;
+    move = terp.back;
+    detect = terp.detectBack;
     place = function(...)
-      turtle.turnAround()
-      local result = stairs.place(...)
-      turtle.turnAround()
+      terp.turnAround()
+      local result = terp.placeItem(...)
+      terp.turnAround()
       return result
     end;
   }
@@ -55,16 +52,16 @@ directionFuncs = {
 
 local spinFuncs = {
   yaw = {
-    { turnNext = turtle.turnRight; turnBack = nil; place = directionFuncs.forward.place };
-    { turnNext = turtle.turnRight; turnBack = turtle.turnLeft; place = directionFuncs.forward.place };
-    { turnNext = turtle.turnRight; turnBack = turtle.turnAround; place = directionFuncs.forward.place };
-    { turnNext = turtle.turnRight; turnBack = turtle.turnRight; place = directionFuncs.forward.place };
+    { turnNext = terp.turnRight; turnBack = nil; place = directionFuncs.forward.place };
+    { turnNext = terp.turnRight; turnBack = terp.turnLeft; place = directionFuncs.forward.place };
+    { turnNext = terp.turnRight; turnBack = terp.turnAround; place = directionFuncs.forward.place };
+    { turnNext = terp.turnRight; turnBack = terp.turnRight; place = directionFuncs.forward.place };
   };
   roll = {
     { turnNext = nil; turnBack = nil; place = directionFuncs.up.place };
-    { turnNext = turtle.turnRight; turnBack = nil; place = directionFuncs.down.place };
-    { turnNext = turtle.turnAround; turnBack = turtle.turnLeft; place = directionFuncs.forward.place };
-    { turnNext = turtle.turnRight; turnBack = turtle.turnRight; place = directionFuncs.forward.place };
+    { turnNext = terp.turnRight; turnBack = nil; place = directionFuncs.down.place };
+    { turnNext = terp.turnAround; turnBack = terp.turnLeft; place = directionFuncs.forward.place };
+    { turnNext = terp.turnRight; turnBack = terp.turnRight; place = directionFuncs.forward.place };
   };
 }
 
@@ -103,16 +100,16 @@ function digLayer(length, width, thickness, turn)
 
   thickness = thickness or 3
   assert(thickness >= -3 and thickness <= 3, "Layer thickness can be a maximum of 3 in either direction")
-  turn = turn or turtle.turnRight
+  turn = turn or terp.turnRight
 
   if thickness == 0 then
     return turn
   end
 
   local absoluteThickness = math.abs(thickness)
-  local digNext = thickness > 0 and turtle.digDown or turtle.digUp
-  local digPrevious = thickness < 0 and turtle.digDown or turtle.digUp
-  local moveStart = thickness > 0 and turtle.down or turtle.up
+  local digNext = thickness > 0 and terp.digDown or terp.digUp
+  local digPrevious = thickness < 0 and terp.digDown or terp.digUp
+  local moveStart = thickness > 0 and terp.down or terp.up
 
   if absoluteThickness < 3 then
     digPrevious = nil
@@ -134,7 +131,7 @@ function digLayer(length, width, thickness, turn)
       if not digAboveBelow(digPrevious, digNext) then
         return nil, "Failed to dig up or down"
       end
-      if not turtle.forward() then
+      if not terp.forward() then
         return nil, "Failed to move forward"
       end
     end
@@ -144,14 +141,14 @@ function digLayer(length, width, thickness, turn)
     -- don't turn at the end of the last row. Let the calling function determine the pattern from layer to layer.
     if j < width then
       turn()
-      if not turtle.forward() then
+      if not terp.forward() then
         return nil, "Failed to move forward"
       end
       turn()
-      if turn == turtle.turnLeft then
-        turn = turtle.turnRight
+      if turn == terp.turnLeft then
+        turn = terp.turnRight
       else
-        turn = turtle.turnLeft
+        turn = terp.turnLeft
       end
     end
   end
@@ -167,11 +164,11 @@ function offset(lateral, forward, vertical)
 
   if lateral then
     if lateral > 0 then
-      if not turtle.right(lateral) then
+      if not terp.right(lateral) then
         return false
       end
     elseif (lateral < 0) then
-      if not turtle.left(lateral * -1) then
+      if not terp.left(lateral * -1) then
         return false
       end
     end
@@ -180,13 +177,13 @@ function offset(lateral, forward, vertical)
   if forward then
     if forward > 0 then
       for i = 1, forward do
-        if not turtle.forward() then
+        if not terp.forward() then
           return false
         end
       end
     elseif (forward < 0) then
       for i = 1, forward * -1 do
-        if not turtle.reverse() then
+        if not terp.reverse() then
           return false
         end
       end
@@ -196,13 +193,13 @@ function offset(lateral, forward, vertical)
   if vertical then
     if vertical > 0 then
       for i = 1, vertical do
-        if not turtle.up() then
+        if not terp.up() then
           return false
         end
       end
     elseif (forward < 0) then
       for i = 1, vertical * -1 do
-        if not turtle.down() then
+        if not terp.down() then
           return false
         end
       end
@@ -227,14 +224,14 @@ function tunnel(length, width, height, lateral_offset, horizontal_offset, vertic
 
   assert(offset(lateral_offset - offset, horizontal_offset, vertical_offset + 1), "failed to move to offset starting position")
 
-  local turn = turtle.rightTurn
+  local turn = terp.rightTurn
   for i = height, 1, -3 do
     turn = assert(digLayer(length, width, i > 2 and -3 or i * -1, turn))
     -- Instead of an alternating quarry pattern, keep all layer patterns oriented down the length of the tunnel
     -- to reduce the number of turns.
-    turtle.turnAround()
+    terp.turnAround()
     for j = 1, math.min(i, 2) do
-      assert(turtle.up(), "failed upward move to next layer")
+      assert(terp.up(), "failed upward move to next layer")
     end
   end
   return true
@@ -251,26 +248,26 @@ function digHole(length, width, depth, lateral_offset, horizontal_offset, vertic
     return false
   end
 
-  local turn = turtle.rightTurn
+  local turn = terp.rightTurn
   local crossPattern = length == width
   local err
   for i = depth, 1, -3 do
     turn, err = digLayer(length, width, i > 2 and -3 or i * -1, turn)
     if crossPattern then
-      if turn == turtle.turnLeft then
-        turn = turtle.turnRight
+      if turn == terp.turnLeft then
+        turn = terp.turnRight
       else
-        turn = turtle.turnLeft
+        turn = terp.turnLeft
       end
     else
       turn()
     end
     turn()
     if i > 2 then
-      assert(turtle.digDown(), "failed to move down into area cleared by last pass.")
+      assert(terp.digDown(), "failed to move down into area cleared by last pass.")
     end
     for j = 1, math.min(2, i) do
-      if not turtle.down() then
+      if not terp.down() then
         print("I think we've hit bottom!")
         i = 3 + j
         break;
@@ -301,7 +298,7 @@ function spinPlaceAny(axis, materialSlotRangeLow, materialSlotRangeHigh, materia
   return spinTryAny(
     axis,
     function(direction)
-      return direction.place(materialSlotRangeLow, materialSlotRangeHigh, materialTypes)
+      return direction.place(materialTypes, materialSlotRangeLow, materialSlotRangeHigh)
     end
     )
 end
@@ -312,12 +309,12 @@ function placeBootstrap(anchorDirection, directionOfTravel, materialSlotRangeLow
 
   local step = 0
 
-  local result = anchorDirection.opposite.place(materialSlotRangeLow, materialSlotRangeHigh, materialTypes)
+  local result = anchorDirection.opposite.place(materialTypes, materialSlotRangeLow, materialSlotRangeHigh)
   if not result then
     while step < limit do
       anchorDirection.opposite.move()
       step = step + 1
-      if anchorDirection.opposite.place(materialSlotRangeLow, materialSlotRangeHigh, materialTypes) then
+      if anchorDirection.opposite.place(materialTypes, materialSlotRangeLow, materialSlotRangeHigh) then
         result = true
         break
       end
@@ -325,7 +322,7 @@ function placeBootstrap(anchorDirection, directionOfTravel, materialSlotRangeLow
     for i = 1, step do
       anchorDirection.move()
       if result then
-        anchorDirection.opposite.place(materialSlotRangeLow, materialSlotRangeHigh, materialTypes)
+        anchorDirection.opposite.place(materialTypes, materialSlotRangeLow, materialSlotRangeHigh)
       end
     end
   end
@@ -349,7 +346,7 @@ function placeBootstrap(anchorDirection, directionOfTravel, materialSlotRangeLow
 end
 
 function tryPlaceFoundation(anchorDirection, directionOfTravel, materialSlotRangeLow, materialSlotRangeHigh, materialTypes, limit, first)
-  if anchorDirection.detect() or anchorDirection.place(materialSlotRangeLow, materialSlotRangeHigh, materialTypes) then
+  if anchorDirection.detect() or anchorDirection.place(materialTypes, materialSlotRangeLow, materialSlotRangeHigh) then
     return true
   end
   if not first then
@@ -357,7 +354,7 @@ function tryPlaceFoundation(anchorDirection, directionOfTravel, materialSlotRang
   end
   anchorDirection.move()
 
-  local result = anchorDirection.place(materialSlotRangeLow, materialSlotRangeHigh, materialTypes)
+  local result = anchorDirection.place(materialTypes, materialSlotRangeLow, materialSlotRangeHigh)
     or spinPlaceAny(anchorDirection.spin, materialSlotRangeLow, materialSlotRangeHigh, materialTypes)
 
   if not result and first == limit then
@@ -380,7 +377,7 @@ function tryPlaceFoundation(anchorDirection, directionOfTravel, materialSlotRang
       )
 
     if result then
-      result = anchorDirection.place(materialSlotRangeLow, materialSlotRangeHigh, materialTypes)
+      result = anchorDirection.place(materialTypes, materialSlotRangeLow, materialSlotRangeHigh)
     end
   end
 
@@ -390,26 +387,26 @@ end
 
 -- seal (or lay) a flat surface, either above or below
 function sealFlat(length, width, direction, lateral_offset, horizontal_offset, vertical_offset, materialSlotRangeLow, materialSlotRangeHigh, materialTypes)
-  local turn = width > 0 and turtle.turnRight or turtle.turnLeft
+  local turn = width > 0 and terp.turnRight or terp.turnLeft
   if not offset(lateral_offset, horizontal_offset, vertical_offset) then
     return false, "failed to move to start mosition"
   end
   -- if the first one is good, the rest will connect the preceding block.
-  if not direction.place(materialSlotRangeLow, materialSlotRangeHigh, materialTypes)
+  if not direction.place(materialTypes, materialSlotRangeLow, materialSlotRangeHigh)
     and not tryPlaceFoundation(direction, directionFuncs.forward, materialSlotRangeLow, materialSlotRangeHigh, materialTypes, 5) then
     return false, "could not place initial block"
   end
 
   for i = 1, math.abs(width) do
     for j = 1, length do
-      direction.place(materialSlotRangeLow, materialSlotRangeHigh, materialTypes)
-      turtle.forward()
+      direction.place(materialTypes, materialSlotRangeLow, materialSlotRangeHigh)
+      terp.forward()
     end
     turn()
     if i < math.abs(width) then
-      turtle.forward()
+      terp.forward()
       turn()
-      turn = turn == turtle.turnLeft and turtle.turnRight or turtle.turnLeft
+      turn = turn == terp.turnLeft and terp.turnRight or terp.turnLeft
     end
   end
   turn()
@@ -418,24 +415,24 @@ end
 
 -- seal the sides of a vertical shaft
 function sealSides(length, width, depth, lateral_offset, horizontal_offset, vertical_offset, materialSlotRangeLow, materialSlotRangeHigh, materialTypes)
-  local digNext = thickness > 0 and turtle.digDown or turtle.digUp
-  local digPrevious = thickness < 0 and turtle.digDown or turtle.digUp
-  local move = depth > 0 and turtle.down or turtle.up
-  turtle.turnLeft()
+  local digNext = thickness > 0 and terp.digDown or terp.digUp
+  local digPrevious = thickness < 0 and terp.digDown or terp.digUp
+  local move = depth > 0 and terp.down or terp.up
+  terp.turnLeft()
   local activeSide = length
   for k = 1, 4 do
     for i = 1, activeSide do
       for j = 1, math.abs(depth) do
-        stairs.placeForward(materialSlotRangeLow, materialSlotRangeHigh, materialTypes)
+        terp.placeItem(materialTypes, materialSlotRangeLow, materialSlotRangeHigh)
         if not move() then
           break
         end
       end
-      turtle.right()
-      move = move == turtle.down and turtle.up or turtle.down
+      terp.right()
+      move = move == terp.down and terp.up or terp.down
     end
     activeSide = activeSide == length and width or length
-    turtle.turnRight()
+    terp.turnRight()
   end
 end
 

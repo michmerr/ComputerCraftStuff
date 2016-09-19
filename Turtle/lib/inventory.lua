@@ -13,7 +13,8 @@ if not waypointCollection then
   os.loadAPI("waypointCollection")
 end
 
-allItems = itemTypeCollection.load("/terp/itemTypeData")
+allItems = itemTypeCollection.load("/terp/lib/itemTypeData")
+local settings = { }
 
 local function defaultLowHigh(low, high)
   low = low or 1
@@ -156,7 +157,6 @@ function terp.resupply(slotLow, slotHigh, itemType)
   print("Go time!")
 end
 
--- TODO: migrate this to inventory
 local function place(placeFunc, slotLow, slotHigh, itemType)
   --print(string.format("place %s, %s, %s, %s", tostring(placeFunc), tostring(slotLow), tostring(slotHigh), tostring(itemType)))
   if not terp.selectItemType(itemType, slotLow, slotHigh) then
@@ -183,23 +183,66 @@ end
 -- for core inventory stuff.
 
 function terp.getRequiredUnloadContainer()
-  --TODO
+  return settings.unloadContainerType
 end
 
 function terp.setRequiredUnloadContainer(container)
-  --TODO
+  -- TODO add checking for supported formats (string description, itemType, function, etc.)
+  settings.unloadContainerType = container
 end
 
-function terp.getUnloadPoint()
-  --TODO
-end
 
-function terp.setUnloadPoint(waypoint)
-  --TODO
+-- TODO address the fact that the consolidation loop could move items from slot ranges defined for job materials
+-- into lower numbered slots if the same material is picked up or placed in a lower slot...
+function terp.consolidateItems()
+  local selected = turtle.getSelectedSlot()
+  for i = 1, 16 do
+    if turtle.getItemCount(i) > 0 then
+      local free = turtle.getItemSpace(i)
+      if i > 0 then
+        local detail = turtle.getItemDetail(i)
+        for j = i + 1, 16 do
+          local checkDetail = turtle.getItemDetail(j)
+          if detail.name == checkDetail.name and detail.damage == checkDetail.damage then
+            turtle.select(j)
+            turtle.transferTo(i, free)
+            free = turtle.getItemSpace(i)
+            if free == 0 then
+              break
+            end
+          end
+        end
+      end
+    end
+  end
+  
+  if selected ~= turtle.getSelectedSlot() then
+    turtle.select(selected)
+  end
 end
 
 function terp.checkFull()
-  -- TODO
+  local full = true
+  for i = 1, 16 do
+    if turtle.getItemCount(i) == 0 then
+      full = false
+      break
+    end
+  end
+
+  -- see if consolidating frees up any slots
+  if full then
+    terp.consolidateItems()
+    full = true
+    for i = 1, 16 do
+      if turtle.getItemCount(i) == 0 then
+        full = false
+        break
+      end
+    end  
+  end
+
+  return full
 end
 
 function terp.waitForOffload(returnToWaypoint)
