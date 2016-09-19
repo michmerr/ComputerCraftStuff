@@ -22,6 +22,7 @@ bin/compactor, /
 bin/e2, /
 bin/startup, /terp
 bin/transfer, /
+bin/treefarm, /
 test/consoleLoggerTest, /terp
 test/inventoryTest, /terp
 test/locationTest, /terp

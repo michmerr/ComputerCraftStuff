@@ -83,6 +83,8 @@ while true do
       terp.drop()
     end
   end
+  print("Waiting...")
+  os.sleep(1800)
 end
 
 --endregion
