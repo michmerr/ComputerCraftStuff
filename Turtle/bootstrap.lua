@@ -152,7 +152,7 @@ local args = { ...}
 if args[1] and args[1] == "exec" then
   pull()
 else
-  if updateFile(fs.getName(shell.getRunningProgram()), bootstrapperPath) then
+  if updateFile(fs.getName(shell.getRunningProgram())..".lua", bootstrapperPath) then
     print("Executing updated bootstrapper...")
     shell.run(bootstrapperPath, "exec")
   else
