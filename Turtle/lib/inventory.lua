@@ -1,16 +1,16 @@
 -- region *.lua
 
 if not utilities then
-  dofile("utilities")
+  dofile("/terp/lib/utilities")
 end
 if not terp then
-  os.loadAPI("terp")
+  os.loadAPI("/terp/lib/terp")
 end
 if not itemTypeCollection then
-  os.loadAPI("itemTypeCollection")
+  os.loadAPI("/terp/lib/itemTypeCollection")
 end
 if not waypointCollection then
-  os.loadAPI("waypointCollection")
+  os.loadAPI("/terp/lib/waypointCollection")
 end
 
 allItems = itemTypeCollection.load("/terp/lib/itemTypeData")

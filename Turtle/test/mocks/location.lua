@@ -1,7 +1,7 @@
 --region *.lua
 --Date
 if not testCommon then
-  os.loadAPI("./testCommon")
+  os.loadAPI("/terp/lib/./testCommon")
 end
 
 testCommon.reloadAPI("orientation", "test/mocks/turtle")

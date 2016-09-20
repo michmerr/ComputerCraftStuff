@@ -1,11 +1,11 @@
 --region *.lua
 
 if not terp then
-  os.loadAPI("terp")
+  os.loadAPI("/terp/lib/terp")
 end
 
 if not inventory then
-  os.loadAPI("inventory")
+  os.loadAPI("/terp/lib/inventory")
 end
 
 local defaultContainerItemTypes = inventory.allItems:where(

@@ -2,10 +2,10 @@
 --Date
 
 if not Logger then
-  os.loadAPI("Logger")
+  os.loadAPI("/terp/lib/Logger")
 end
 if not ConsoleLogger then
-  os.loadAPI("ConsoleLogger")
+  os.loadAPI("/terp/lib/ConsoleLogger")
 end
 
 local listener = ConsoleLogger.new()

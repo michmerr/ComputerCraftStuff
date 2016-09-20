@@ -1,10 +1,10 @@
 -- region *.lua
 -- Date
 if not terp then
-  os.loadAPI("terp")
+  os.loadAPI("/terp/lib/terp")
 end
 if not utilities then
-  dofile("utilities")
+  dofile("/terp/lib/utilities")
 end
 
 directionFuncs = {

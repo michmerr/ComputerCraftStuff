@@ -2,15 +2,15 @@
 -- Date
 
 if not terp then
-  os.loadAPI("terp")
+  os.loadAPI("/terp/lib/terp")
 end
 
 if not orientation then
-  os.loadAPI("orientation")
+  os.loadAPI("/terp/lib/orientation")
 end
 
 if not Logger then
-  os.loadAPI("Logger")
+  os.loadAPI("/terp/lib/Logger")
 end
 
 function create(state)

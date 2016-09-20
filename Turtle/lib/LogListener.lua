@@ -2,10 +2,10 @@
 --Date
 
 if not bit then
-  os.loadAPI("../rom/apis/bit")
+  os.loadAPI("/terp/lib/../rom/apis/bit")
 end
 if not Logger then
-  os.loadAPI("Logger")
+  os.loadAPI("/terp/lib/Logger")
 end
 
 function create(threshold, specificLevels)

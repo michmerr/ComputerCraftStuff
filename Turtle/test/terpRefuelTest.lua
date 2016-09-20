@@ -1,7 +1,7 @@
 --region *.lua
 
 if not testCommon then
-  os.loadAPI("./testCommon")
+  os.loadAPI("/terp/lib/./testCommon")
 end
 
 function init()

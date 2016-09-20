@@ -1,19 +1,19 @@
 -- region *.lua
 
 if not utilities then
-  dofile("utilities")
+  dofile("/terp/lib/utilities")
 end
 
 if not terp then
-  os.loadAPI("terp")
+  os.loadAPI("/terp/lib/terp")
 end
 
 if not location then
-  os.loadAPI("location")
+  os.loadAPI("/terp/lib/location")
 end
 
 if not waypoint then
-  os.loadAPI("waypointCollection")
+  os.loadAPI("/terp/lib/waypointCollection")
 end
 
 function create(useInventory, minFuelForOperation, optimumTopOff, minFuelAfterReturn, fuelPoint, fuelPointSuckFunc)

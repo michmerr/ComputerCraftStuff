@@ -1,5 +1,5 @@
 if not utilities then
-  dofile("../lib/utilities.lua")
+  dofile("/terp/lib/../lib/utilities.lua")
 end
 if not fs then
   fs = {}

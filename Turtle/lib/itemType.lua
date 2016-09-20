@@ -2,7 +2,7 @@
 -- Date
 
 if not utilities then
-  dofile("utilities")
+  dofile("/terp/lib/utilities")
 end
 
 local itemTypeBase = { }

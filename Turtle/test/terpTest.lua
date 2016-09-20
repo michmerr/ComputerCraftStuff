@@ -8,7 +8,7 @@ local directions = {
 }
 
 if not testCommon then
-  os.loadAPI("test/testCommon")
+  os.loadAPI("/terp/lib/test/testCommon")
 end
 
 function init()

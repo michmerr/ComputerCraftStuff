@@ -45,8 +45,8 @@ local function wget(sUrl, sFile)
   local res = get(sUrl)
   if res then
       local file = fs.open( sPath, "w" )
-      file:write(res)
-      file:close()
+      file.write(res)
+      file.close()
       return true
   end
   return nil
@@ -104,28 +104,37 @@ local function readManifest(filename)
 end
 
 local function updateManifest()
-  local oldManifest = manifestPath..".old"
-  if fs.exists(oldManifest) then
-    delete(oldManifest)
+  local oldManifest
+  local existingFiles
+  if fs.exists(manifestPath) then
+    oldManifest = manifestPath..".old"
+    if fs.exists(oldManifest) then
+      delete(oldManifest)
+    end
+    fs.copy(manifestPath, oldManifest)
   end
-  fs.copy(manifestPath, oldManifest)
   if not updateFile(manifest, manifestPath) then
     if fs.exists(manifestPath) then
       delete(manifestPath)
     end
-    fs.move(oldManifest, manifestPath)
+    if oldManifest then
+      fs.move(oldManifest, manifestPath)
+    end
     return nil
   end
-  delete(oldManifest)
-  return true
+  if oldManifest then
+    existingFiles = readManifest(oldManifest)
+    delete(oldManifest)
+  end
+  return true, existingFiles
 end
 
 local function pull()
   local pass = 0
   local fail = 0
 
-  local existingFiles = readManifest(manifestPath)
-  if not updateManifest(existingFiles) then
+  local success, existingFiles = updateManifest(existingFiles)
+  if not success then
     print "Failed to retrieve manifest. Aborting."
     return false
   end
@@ -138,7 +147,9 @@ local function pull()
       fail = fail + 1
     end
   end
-  cleanMovedFiles(existingFiles, filelist)
+  if existingFiles then
+    cleanMovedFiles(existingFiles, filelist)
+  end
 
   print(string.format("Files updated successfully: %d", pass))
   if (fail > 0) then

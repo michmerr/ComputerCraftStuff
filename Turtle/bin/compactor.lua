@@ -2,11 +2,11 @@
 -- Date
 
 if not utilities then
-  dofile("utilities")
+  dofile("/terp/lib/utilities")
 end
 
 if not itemTypeCollection then
-  os.loadAPI("itemTypeCollection")
+  os.loadAPI("/terp/lib/itemTypeCollection")
 end
 
 local configFile

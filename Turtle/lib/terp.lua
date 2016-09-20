@@ -2,11 +2,11 @@
 -- Date
 
 if not turtle then
-  os.loadAPI("turtle")
+  os.loadAPI("/terp/lib/turtle")
 end
 
 if not Logger then
-  os.loadAPI("Logger")
+  os.loadAPI("/terp/lib/Logger")
 end
 
 local base = { }

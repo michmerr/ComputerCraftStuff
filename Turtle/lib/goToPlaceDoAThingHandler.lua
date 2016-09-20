@@ -1,6 +1,6 @@
 --region *.lua
-os.loadAPI("terp")
-os.loadAPI("waypointCollection")
+os.loadAPI("/terp/lib/terp")
+os.loadAPI("/terp/lib/waypointCollection")
 
 function create(place, fromWaypoint, aThing)
   local self = { }

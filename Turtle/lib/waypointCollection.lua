@@ -8,15 +8,15 @@
 -- between the current and target position, it can prevent slower, destructive transit through that space.
 
 if not terp then
-  os.loadAPI("terp")
+  os.loadAPI("/terp/lib/terp")
 end
 
 if not location then
-  os.loadAPI("location")
+  os.loadAPI("/terp/lib/location")
 end
 
 if not waypoint then
-  os.loadAPI("waypoint")
+  os.loadAPI("/terp/lib/waypoint")
 end
 
 function create(...)
