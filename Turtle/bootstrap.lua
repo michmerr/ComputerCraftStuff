@@ -84,7 +84,7 @@ end
 local function parseManifestLine(line)
   local _, _, source, localRoot = string.find(line, "%s*(.+)%s*,%s*(.+)%s*")
   local localPath = string.gsub(localRoot.."/"..source, "//+", "/")
-  local fileUrl = githubUrl.."/"..source..".lua"
+  local fileUrl = source..".lua"
   return fileUrl, localPath
 end
 
@@ -109,13 +109,13 @@ local function updateManifest()
   if fs.exists(manifestPath) then
     oldManifest = manifestPath..".old"
     if fs.exists(oldManifest) then
-      delete(oldManifest)
+      fs.delete(oldManifest)
     end
     fs.copy(manifestPath, oldManifest)
   end
   if not updateFile(manifest, manifestPath) then
     if fs.exists(manifestPath) then
-      delete(manifestPath)
+      fs.delete(manifestPath)
     end
     if oldManifest then
       fs.move(oldManifest, manifestPath)
@@ -124,7 +124,7 @@ local function updateManifest()
   end
   if oldManifest then
     existingFiles = readManifest(oldManifest)
-    delete(oldManifest)
+    fs.delete(oldManifest)
   end
   return true, existingFiles
 end
